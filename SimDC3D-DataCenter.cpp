@@ -210,7 +210,6 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 			VMS_ALGORITHM_SELECTION = "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY";
 		}
 
-
 		if ((VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_CPU/LESS_MEMORY") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY") ||
 			(VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY/HIGHER_IO_NETWORK") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU") ||
 			(VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "LESS_MEMORY") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "RANDOM_SELECTION") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_IO_NETWORK")) {
@@ -226,6 +225,33 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 	else {
 		 cout << "SIMDC3D-ERROR: Unknown VMS_ALGORITHM_SELECTION. Use default value (HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY)" << endl;
 		 exit(0);
+	}
+
+
+	if ( (OPTIMIZATION_ALGORITHM_OVERLOAD_UTILIZATION == "3DMOBFD") || (OPTIMIZATION_ALGORITHM_LOW_UTILIZATION == "3DMOBFD") || (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ") ) {
+	   if ( (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) ) {
+		   float wght = 0;
+		   if (ALPHA_3DMOBFD == 1) 
+			   wght += WEIGHT_TEMPERATURE;
+
+		    if (BETA_3DMOBFD == 1) 
+			   wght += WEIGHT_CPU;
+
+			if (GAMMA_3DMOBFD == 1) 
+			   wght += WEIGHT_POWER;
+
+			if (DELTA_3DMOBFD == 1) 
+			   wght += WEIGHT_MEMORY;
+
+			if (EPSILON_3DMOBFD == 1) 
+			   wght += WEIGHT_TRAFFIC;
+
+			if (wght != 1) {
+				
+				cout << "SIMDC3D-ERROR: Sum of weights (" << wght << ") is different from 1 !!!" << endl;
+				exit(0);
+			}
+	   }
 	}
 
 
@@ -629,7 +655,7 @@ void DataCenter::EveryASecond(void)
 	// This part of the code is not worth paralelizing. The mutex kills the performance.
 	// I commented out the parallel code. It will always run on the main thread.
 
-	int totalVMsDC = 0;
+	unsigned int totalVMsDC = 0;
 
 	// delete finished VMs
 	for (int i = 0; i < NUMBER_OF_CHASSIS; ++i) {

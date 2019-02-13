@@ -125,7 +125,8 @@ void UniformTaskSchedulingAlgorithm::AssignVMs()
 	// assign VMs to Servers
 	while (!pqVMsToGo->empty()) {
 		// assign with qWaitingVMs.top()
-		int bestI, bestJ = -1;
+		int bestI = -1; 
+		int	bestJ = -1;
 		FLOATINGPOINT bestAvailability = 1000000.0; // any big number
 		for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
 			for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
@@ -134,7 +135,8 @@ void UniformTaskSchedulingAlgorithm::AssignVMs()
 				}
 				FLOATINGPOINT sumofVM = (*ppServers)[i][j]->VMRequiresThisMuchCPUScale();
 				if (sumofVM < bestAvailability) { // assign to the machine with least jobs
-					bestI = i; bestJ = j; 
+					bestI = i; 
+					bestJ = j; 
 					bestAvailability = sumofVM;
 				}
 			}
@@ -163,7 +165,8 @@ void BestPerformanceSchedulingAlgorithm::AssignVMs()
 	// assign VMs to Servers
 	while (!pqVMsToGo->empty()) {
 		// assign with qWaitingVMs.top()
-		int bestI, bestJ = -1;
+		int bestI = -1; 
+		int	bestJ = -1;
 		FLOATINGPOINT bestAvailability = 1000000.0; // any big number
 		for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
 			for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
@@ -174,7 +177,8 @@ void BestPerformanceSchedulingAlgorithm::AssignVMs()
 				FLOATINGPOINT maxutil = (*ppServers)[i][j]->MaxUtilization();
 				FLOATINGPOINT ratio = (sumofVM/maxutil);
 				if (ratio < bestAvailability) {
-					bestI = i; bestJ = j;
+					bestI = i; 
+					bestJ = j;
 					bestAvailability = ratio;
 				}
 			}
@@ -284,7 +288,8 @@ void XintSchedulingAlgorithm::AssignVMs()
 {
 	// assign VMs to Servers
 	while (!pqVMsToGo->empty()) {
-		int bestI, bestJ = -1;
+		int bestI = -1;
+		int bestJ = -1;
 		FLOATINGPOINT thishastobemin = 1000.0;
 		for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
 			for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
@@ -294,7 +299,8 @@ void XintSchedulingAlgorithm::AssignVMs()
 				(*ppServers)[i][j]->AssignOneVM(pqVMsToGo->front()); // temporarilly assign to i,j
 				FLOATINGPOINT local_thishastobemin = GetHighestTemperatureIncrease();
 				if (thishastobemin > local_thishastobemin) {
-					bestI = i; bestJ = j;
+					bestI = i; 
+					bestJ = j;
 					thishastobemin = local_thishastobemin;
 				}
 				(*ppServers)[i][j]->RemoveTheLastAssignedVM(); // de-assign after calculating hr effect
@@ -560,8 +566,8 @@ void TwoDimensionWithPoolAndPredictionSchedulingAlgorithm::AssignVMs()
 		     serverScheduling[k].server = j;
 		     serverScheduling[k].temperature = (*ppServers)[i][j]->CurrentInletTemperature();
 			 serverScheduling[k].utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization();
-			 serverScheduling[k].utilizationMemory = (*ppServers)[sv.chassi][sv.server]->VMRequiresThisMemory();
-			 serverScheduling[k].memoryServer = (*ppServers)[sv.chassi][sv.server]->GetMemoryServer();
+			 serverScheduling[k].utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();
+			 serverScheduling[k].memoryServer = (*ppServers)[i][j]->GetMemoryServer();
 			 serverScheduling[k].predictedOverload = (*ppServers)[i][j]->ReturnCPUPrediction();
 
   		     if ((*ppServers)[i][j]->ReturnSizeVectorTemperature() == SIZE_WINDOWN_PREDICTION) {
@@ -935,7 +941,6 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
  FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF = 0;
  FLOATINGPOINT EFF_NetWork = 0;
 
 
@@ -995,7 +1000,7 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
    // assign VMs to Servers
   while (!pqVMsToGo->empty())  {
 	    noScheduler = false;
-        for(int i=0; i < serverScheduling.size(); i++) {
+        for(unsigned int i=0; i < serverScheduling.size(); i++) {
 			if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) <= serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
    		       serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
 			   serverScheduling[i].utilizationMemory -= pqVMsToGo->front()->GetMemUseVM();
@@ -1095,7 +1100,6 @@ void ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::As
  FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF = 0;
  FLOATINGPOINT EFF_NetWork = 0;
 
  vector<SORTSERVER> serverScheduling;
@@ -1196,7 +1200,7 @@ void ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::As
    // assign VMs to Servers
   while (!pqVMsToGo->empty())  {
 	    noScheduler = false;
-        for(int i=0; i < serverScheduling.size(); i++) {
+        for(unsigned int i=0; i < serverScheduling.size(); i++) {
 			if ( (serverScheduling[i].predictedOverload) || (serverScheduling[i].temperatureFuture > EMERGENCY_TEMPERATURE) ) {
 			   continue;
 			 }
@@ -1276,7 +1280,6 @@ void ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::AssignVMs()
  FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF = 0;
  FLOATINGPOINT EFF_NetWork = 0;
 
  vector<SORTSERVER> serverScheduling;
@@ -1285,7 +1288,7 @@ void ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::AssignVMs()
  POOL sv;
 
  int RemovePOOL = 0; 
- int full = 0;
+ unsigned int full = 0;
 
 
   if (!pqVMsToGo->empty()) {
@@ -1341,7 +1344,7 @@ void ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::AssignVMs()
    // assign VMs to Servers
   while (!pqVMsToGo->empty())  {
 	    full = 0;
-        for(int i=0; i < serverScheduling.size(); i++) {
+        for(unsigned int i=0; i < serverScheduling.size(); i++) {
            if (!pqVMsToGo->empty()) {
 			  if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) < serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
    		         serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
@@ -1465,7 +1468,6 @@ void ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgori
  FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF = 0;
  FLOATINGPOINT EFF_NetWork = 0;
 
  vector<SORTSERVER> serverScheduling;
@@ -1474,7 +1476,7 @@ void ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgori
  vector<double> predictionTemp;
 
  int RemovePOOL = 0; 
- int full = 0;
+ unsigned int full = 0;
  
  POOL sv;
 
@@ -1569,7 +1571,7 @@ void ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgori
   // assign VMs to Servers
   while (!pqVMsToGo->empty()) {
 	    full = 0;
-        for (int i=0; i < serverScheduling.size(); i++) {
+        for (unsigned int i=0; i < serverScheduling.size(); i++) {
 			if ( (serverScheduling[i].predictedOverload) || (serverScheduling[i].temperatureFuture > EMERGENCY_TEMPERATURE) ) {
 			   full += 1;
 			   continue;

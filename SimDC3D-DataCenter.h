@@ -76,7 +76,7 @@ extern float SCHEDULER_2D_WEIGHT_LOAD_CPU;
 extern bool OPTIMIZATION_WITH_PREDICTION;
 extern long CLENGTH;
 extern string PREDICTION_ALGORITHM;
-extern int SIZE_WINDOWN_PREDICTION;
+extern unsigned int SIZE_WINDOWN_PREDICTION;
 
 extern string OPTIMIZATION_ALGORITHM_TOPOLOGY;
 extern int PERIODIC_INTERVAL_EXECUTION_TOPOLOGY;
@@ -86,6 +86,18 @@ extern string VMS_ALGORITHM_SELECTION_OVERLOADED_LINK;
 extern bool CALCULATE_TRAFFIC_CORRELATION;
 extern string TYPE_TOPOLOGY;
 extern bool SIMULATE_TOPOLOGY_OPTIMIZATION;
+
+extern int ALPHA_3DMOBFD;
+extern int BETA_3DMOBFD;
+extern int GAMMA_3DMOBFD;
+extern int DELTA_3DMOBFD;
+extern int EPSILON_3DMOBFD;
+
+extern float WEIGHT_TEMPERATURE;
+extern float WEIGHT_CPU;
+extern float WEIGHT_POWER;
+extern float WEIGHT_MEMORY;
+extern float WEIGHT_TRAFFIC;
 
 
 struct Parametros {
@@ -249,7 +261,7 @@ private:
 	int totalVMs;
 	int totalVMsMigratingANDFinish;
 	int totalVMsFinish;
-	int maximumNumberSimultaneousVMs;
+	unsigned int maximumNumberSimultaneousVMs;
 
 	time_t timeIni;
 

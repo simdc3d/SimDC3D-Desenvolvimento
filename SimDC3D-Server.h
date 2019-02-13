@@ -24,8 +24,8 @@ extern bool CONSTANT_FAN_POWER;
 extern bool FAN_RPM_NO_LIMIT;
 extern long int TOTAL_OF_MEMORY_IN_ONE_SERVER;
 extern long int BANDWIDTH_IN_ONE_SERVER;
-extern int SIZE_WINDOWN_PREDICTION;
-extern int SIZE_WINDOWN_PREDICTION_CPU;
+extern unsigned int SIZE_WINDOWN_PREDICTION;
+extern unsigned int SIZE_WINDOWN_PREDICTION_CPU;
 extern int MONITORINGTIME;
 extern bool SCHEDULING_WITH_PREDICTION;
 extern int POWER_ON;
@@ -42,6 +42,24 @@ extern string PREDICTION_ALGORITHM_OVERLOAD;
 extern float EMERGENCY_TEMPERATURE;
 extern bool SIMULATES_NETWORK;
 extern bool OPTIMIZATION_WITH_PREDICTION;
+
+extern int E_TEMPERATURE;
+extern int E_CPU;
+extern int E_POWER;
+extern int E_MEMORY;
+extern int E_TRAFFIC;
+
+extern int ALPHA_3DMOBFD;
+extern int BETA_3DMOBFD;
+extern int GAMMA_3DMOBFD;
+extern int DELTA_3DMOBFD;
+extern int EPSILON_3DMOBFD;
+
+extern float WEIGHT_TEMPERATURE;
+extern float WEIGHT_CPU;
+extern float WEIGHT_POWER;
+extern float WEIGHT_MEMORY;
+extern float WEIGHT_TRAFFIC;
 
 extern vector<double> runRBF(vector<double> vetorPredicao);
 extern vector<double> runPolynom(vector<double> vetorPredicao);
@@ -92,7 +110,7 @@ public:
 
 	vector<VirtualMachine *>* GetFinishedVMVector();
 	vector<VirtualMachine *> GetALLVMs(void);
-	vector<VirtualMachine *> GetNVMs(int N, string Algortimo_Selection);
+	vector<VirtualMachine *> GetNVMs(unsigned int N, string Algortimo_Selection);
 
 	VirtualMachine* TakeAVM();
 	VirtualMachine* InsertNewVM(VirtualMachine* VM, FLOATINGPOINT timeM);
@@ -101,8 +119,8 @@ public:
 	
 	vector<double> GetTricubeWeigts(int n);
 
-	int HowManyVMs(void);
-	int ReturnSizeVectorTemperature(void);
+	unsigned int HowManyVMs(void);
+	unsigned int ReturnSizeVectorTemperature(void);
 
 	long int VMRequiresThisMemory();
 

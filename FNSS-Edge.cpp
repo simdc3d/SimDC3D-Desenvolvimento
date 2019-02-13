@@ -116,7 +116,7 @@ FLOATINGPOINT Edge::ReturnStandardDeviation(void) {
 
 	avrTraffic = ReturnAverageTraffic();
 
-	for (int i = 0; i < varianceTraffic.size(); i++)  {
+	for (unsigned int i = 0; i < varianceTraffic.size(); i++)  {
 		vra += pow((varianceTraffic[i] - avrTraffic),2);
     }
 

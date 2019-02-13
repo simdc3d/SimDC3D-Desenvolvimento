@@ -90,12 +90,12 @@ string SCHEDULING_ALGORITHM = "";						// best_performance, uniform_task, low_te
 	float SCHEDULER_2D_WEIGHT_LOAD_CPU = 0.00;					//
 
 	//parameters prediction algorithm RBF and POLYNOM
-	int SIZE_WINDOWN_PREDICTION = 0;					//	Size Windown Prediction
+	unsigned int SIZE_WINDOWN_PREDICTION = 0;			//	Size Windown Prediction
 	int MONITORINGTIME = 0;								//  Monitoring Time in Seconds
 
 	// parameters prediction algorithm RBF 
-	int DIM = 0;										//-m embedding dimension [default: 2]
-	int DELAY = 0;										//-d delay [default: 1]
+	unsigned int DIM = 0;										//-m embedding dimension [default: 2]
+	unsigned int DELAY = 0;										//-d delay [default: 1]
 	int CENTER = 0;										//-p number of centers [default: 10]
 	int STEP = 0;										//-s steps to forecast [default: 1]
 	unsigned int COLUMN = 0;							//-c column to read [default: 1]
@@ -134,9 +134,31 @@ bool SIMULATES_MIGRATION_VMS = false;
 
 	bool USING_PREDICTION_TO_OVERLOAD = false;
 		string PREDICTION_ALGORITHM_OVERLOAD = "";
-		int SIZE_WINDOWN_PREDICTION_CPU = 0;
-		 
-	// setting network parameters
+		unsigned int SIZE_WINDOWN_PREDICTION_CPU = 0;
+
+
+// setting 3DMOBFD
+
+int ALPHA_3DMOBFD = 0;
+int BETA_3DMOBFD = 0;
+int GAMMA_3DMOBFD = 0;
+int DELTA_3DMOBFD = 0;
+int EPSILON_3DMOBFD = 0;
+
+float WEIGHT_TEMPERATURE = 0;
+float WEIGHT_CPU = 0;
+float WEIGHT_POWER = 0;
+float WEIGHT_MEMORY = 0;
+float WEIGHT_TRAFFIC = 0;
+
+int E_TEMPERATURE = 0;	
+int E_CPU = 0;	
+int E_MEMORY = 0;
+int E_TRAFFIC = 0;	
+int E_POWER = 0;	
+
+
+// setting network parameters
 bool SIMULATES_NETWORK = false;
 	string TYPE_TOPOLOGY = "";
     string NAME_FILE_TOPOLOGY = "";
@@ -895,6 +917,144 @@ int SetParameters(std::map <string, string> par)
 	  return 1;
 	}
 
+
+	//ALPHA_3DMOBFD 
+	if(par.find("ALPHA_3DMOBFD") != par.end()) {
+      ALPHA_3DMOBFD = stoi(par.find("ALPHA_3DMOBFD")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! ALPHA_3DMOBFD " << endl;
+	  return 1;
+	}
+
+	//BETA_3DMOBFD 
+	if(par.find("BETA_3DMOBFD") != par.end()) {
+      BETA_3DMOBFD = stoi(par.find("BETA_3DMOBFD")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! BETA_3DMOBFD " << endl;
+	  return 1;
+	}
+
+	//GAMMA_3DMOBFD 
+	if(par.find("GAMMA_3DMOBFD") != par.end()) {
+      GAMMA_3DMOBFD = stoi(par.find("GAMMA_3DMOBFD")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! GAMMA_3DMOBFD " << endl;
+	  return 1;
+	}
+
+	//DELTA_3DMOBFD 
+	if(par.find("DELTA_3DMOBFD") != par.end()) {
+      DELTA_3DMOBFD = stoi(par.find("DELTA_3DMOBFD")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! DELTA_3DMOBFD " << endl;
+	  return 1;
+	}
+
+	//EPSILON_3DMOBFD 
+	if(par.find("EPSILON_3DMOBFD") != par.end()) {
+      EPSILON_3DMOBFD = stoi(par.find("EPSILON_3DMOBFD")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! EPSILON_3DMOBFD " << endl;
+	  return 1;
+	}
+
+
+	// WEIGHT_TEMPERATURE
+	if(par.find("WEIGHT_TEMPERATURE") != par.end()) {
+      WEIGHT_TEMPERATURE = stof(par.find("WEIGHT_TEMPERATURE")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! WEIGHT_TEMPERATURE " << endl;
+	  return 1;
+	}
+
+	// WEIGHT_CPU
+	if(par.find("WEIGHT_CPU") != par.end()) {
+      WEIGHT_CPU = stof(par.find("WEIGHT_CPU")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! WEIGHT_CPU " << endl;
+	  return 1;
+	}
+
+	// WEIGHT_POWER
+	if(par.find("WEIGHT_POWER") != par.end()) {
+      WEIGHT_POWER = stof(par.find("WEIGHT_POWER")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! WEIGHT_POWER " << endl;
+	  return 1;
+	}
+	
+	// WEIGHT_MEMORY
+	if(par.find("WEIGHT_MEMORY") != par.end()) {
+      WEIGHT_MEMORY = stof(par.find("WEIGHT_MEMORY")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! WEIGHT_MEMORY " << endl;
+	  return 1;
+	}
+
+	// WEIGHT_TRAFFIC
+	if(par.find("WEIGHT_TRAFFIC") != par.end()) {
+      WEIGHT_TRAFFIC = stof(par.find("WEIGHT_TRAFFIC")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! WEIGHT_TRAFFIC " << endl;
+	  return 1;
+	}
+
+
+	//E_TEMPERATURE 
+	if(par.find("E_TEMPERATURE") != par.end()) {
+      E_TEMPERATURE = stoi(par.find("E_TEMPERATURE")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! E_TEMPERATURE " << endl;
+	  return 1;
+	}
+
+	//E_CPU 
+	if(par.find("E_CPU") != par.end()) {
+      E_CPU = stoi(par.find("E_CPU")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! E_CPU " << endl;
+	  return 1;
+	}
+
+	//E_POWER 
+	if(par.find("E_POWER") != par.end()) {
+      E_POWER = stoi(par.find("E_POWER")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! E_POWER " << endl;
+	  return 1;
+	}
+
+	//E_MEMORY 
+	if(par.find("E_MEMORY") != par.end()) {
+      E_MEMORY = stoi(par.find("E_MEMORY")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! E_MEMORY " << endl;
+	  return 1;
+	}
+
+	//E_TRAFFIC 
+	if(par.find("E_TRAFFIC") != par.end()) {
+      E_TRAFFIC = stoi(par.find("E_TRAFFIC")->second);
+	}
+	else {
+	  cout << "SimDC3D-ERROR: Parameter not found !!! E_TRAFFIC " << endl;
+	  return 1;
+	}
+
 	// SIMULATES_NETWORK
 	if(par.find("SIMULATES_NETWORK") != par.end()) {
       SIMULATES_NETWORK = To_Bool(par.find("SIMULATES_NETWORK")->second);
@@ -1631,7 +1791,7 @@ bool ParsingArguments(int argc, char* argv[])
 	cout << endl;
 	cout << "#Settings Virtual Machine " << endl;
 		cout << " -MEMORY_VIRTUAL_MACHINE : ";
-		for (int i=0; i < MEMORY_VIRTUAL_MACHINE.size(); i++){
+		for (unsigned int i=0; i < MEMORY_VIRTUAL_MACHINE.size(); i++){
 			cout << MEMORY_VIRTUAL_MACHINE[i] << " ";
 		}
 		cout << endl;
@@ -1718,6 +1878,25 @@ bool ParsingArguments(int argc, char* argv[])
 		cout << " -SIZE_WINDOWN_PREDICTION_CPU : " << SIZE_WINDOWN_PREDICTION_CPU  << endl; 
 
 	cout << endl;
+	cout << "#Setting 3DMOBFD Algorithm Parameters " << endl;
+		cout << " -ALPHA_3DMOBFD  : " << ALPHA_3DMOBFD  << endl;
+		cout << " -BETA_3DMOBFD : " << BETA_3DMOBFD << endl;
+		cout << " -GAMMA_3DMOBFD : " << SIZE_WINDOWN_PREDICTION_CPU  << endl; 
+		cout << " -DELTA_3DMOBFD : " << DELTA_3DMOBFD << endl;
+		cout << " -EPSILON_3DMOBFD : " << EPSILON_3DMOBFD  << endl;
+		cout << endl;
+		cout << " -WEIGHT_TEMPERATURE  : " << WEIGHT_TEMPERATURE  << endl;
+		cout << " -WEIGHT_CPU : " << WEIGHT_CPU << endl;
+		cout << " -WEIGHT_POWER : " << WEIGHT_POWER  << endl; 
+		cout << " -WEIGHT_MEMORY : " << WEIGHT_MEMORY << endl;
+		cout << " -WEIGHT_TRAFFIC : " << WEIGHT_TRAFFIC  << endl;
+		cout << endl;
+		cout << " -E_TEMPERATURE  : " << E_TEMPERATURE  << endl;
+		cout << " -E_CPU : " << E_CPU << endl;
+		cout << " -E_POWER : " << E_POWER  << endl; 
+		cout << " -E_MEMORY : " << E_MEMORY << endl;
+		cout << " -E_TRAFFIC : " << E_TRAFFIC << endl;
+		cout << endl;
 
 	cout << "#Setting Network Parameters " << endl;
 		cout << " -SIMULATES_NETWORK : " << SIMULATES_NETWORK << endl;
@@ -1959,7 +2138,7 @@ REMOVE_EMPTY_ELEMENT:
 
 int main(int argc, char* argv[])
 {
-	time_t timeexec, timeold, timeini;
+	time_t timeold, timeini;
 
 	// Reading parameters file
 	if (ReadParameters() != 0) {

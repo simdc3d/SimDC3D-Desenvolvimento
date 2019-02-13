@@ -378,7 +378,6 @@ void Server::EveryASecond(int clockSimul)
 	// run VMs
 	FLOATINGPOINT sumUtil = VMRequiresThisMuchUtilization();
 	FLOATINGPOINT maxUtil = MaxUtilization();
-	long int sumMemory = VMRequiresThisMemory();
 
 	// Save workload CPU
 	InsertWorkLoadCPU(sumUtil);
@@ -517,12 +516,12 @@ void Server::MoveVMTo(Server* (*mserver)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN
 	newVirtualMachine_ = (*mserver)[chassiDestination][serverDestination]->InsertNewVM(VMSelected, timeMigration);
 
     if (CPUpredicted) {
-	   predictedTime = clock+SIZE_WINDOWN_PREDICTION_CPU;
+	   predictedTime = clock + SIZE_WINDOWN_PREDICTION_CPU;
     }
     
 	// initializes the migration source and set the end time of migration on the source VM
 	isMigrating = true;
-	for (int i=0; i < vRunningVMs.size(); i++){
+	for (unsigned int i=0; i < vRunningVMs.size(); i++){
 	    if (vRunningVMs[i] == VMSelected) {
 		   vRunningVMs[i]->InsertTimeMigrationSource(timeMigration);
 		   vRunningVMs[i]->InsertNewVM(newVirtualMachine_);
@@ -542,7 +541,7 @@ vector<VirtualMachine *> Server::GetALLVMs(void)
  	 return VMsTemp;
   }
 
-  for(int i=0; i < vRunningVMs.size(); i++){
+  for(unsigned int i=0; i < vRunningVMs.size(); i++){
 	   if ( (!vRunningVMs[i]->IsFinished()) && (!vRunningVMs[i]->ReturnIsMove()) ) {
 		  VMsTemp.push_back(vRunningVMs[i]);
 	  }
@@ -551,14 +550,14 @@ vector<VirtualMachine *> Server::GetALLVMs(void)
   return VMsTemp;
 }
 
-vector<VirtualMachine *> Server::GetNVMs(int N, string Algortimo_Selection)
+vector<VirtualMachine *> Server::GetNVMs(unsigned int N, string Algortimo_Selection)
 {
   vector<VirtualMachine *> VMTemp;
   int numSort = 0;
-  int sumSort = 0;
+  unsigned int sumSort = 0;
   srand( (unsigned)time(NULL) );
-  int ind = 0;
-  int indVM = 0;
+  unsigned int ind = 0;
+  unsigned int indVM = 0;
 
   if ((isOFF) || (isHibernating) || (isEnding) || (isPOOL) || (isInitializing)) {
      cout << "Error: Get Finished VM Vector called to a turned off or pool or initializing server !!!" << " Power OFF = " << isOFF << " Hibernating = " << isHibernating << " Ending = " << isEnding << " is POOL = " << isPOOL << " is Initializing = " << isInitializing << endl;
@@ -674,7 +673,7 @@ bool Server::HasVMs(void)
 	}
 }
 
-int  Server::HowManyVMs(void)
+unsigned int Server::HowManyVMs(void)
 {
 	return vRunningVMs.size();
 }
@@ -1034,7 +1033,7 @@ FLOATINGPOINT Server::CurrentAddedTemperature()
 	return additionalHeatTimingBuffer[slotIndex];
 }
 
-int Server::ReturnSizeVectorTemperature(void)
+unsigned int Server::ReturnSizeVectorTemperature(void)
 {
 	return temperatureServer.size();
 }
@@ -1069,7 +1068,7 @@ void Server::CalculatingStandardDeviationCPU(void)
 
  avg = AverageUsageofCPU();
 
- for(int j=0; j < utilizationCPU.size(); j++) {
+ for(unsigned int j=0; j < utilizationCPU.size(); j++) {
  	 var += pow(utilizationCPU[j] - avg,2);
  }
 
@@ -1176,7 +1175,7 @@ FLOATINGPOINT Server::ReturnVarianceErrorMean(void)
 
  mean = ReturnErrorMean();
 
-  for(int i=0; i < varianceErrorMean.size(); i++) {
+  for(unsigned int i=0; i < varianceErrorMean.size(); i++) {
       var += pow(varianceErrorMean[i] - mean,2);
   }
   
@@ -1204,7 +1203,7 @@ bool Server::IsHostOverUtilized(string prediction_Algorithm)
 
 bool Server::LR_CPU(void)
 {
-  int length = SIZE_WINDOWN_PREDICTION_CPU; // we use 10 to make the regression responsive enough to latest values
+  unsigned int length = SIZE_WINDOWN_PREDICTION_CPU; // we use 10 to make the regression responsive enough to latest values
 
   FLOATINGPOINT migrationIntervals = 0;
   FLOATINGPOINT predictedUtilization = 0;
@@ -1217,7 +1216,7 @@ bool Server::LR_CPU(void)
 	 return false; 
   }
   
-  for (int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++) {
 	  utilizationHistoryReversed.push_back(utilizationCPU[utilizationCPU.size() - i - 1]);
   }
   
@@ -1306,13 +1305,13 @@ Maths::Regression::Linear_CodeCogs* Server::CreateWeigthedLinearRegression(vecto
  vector<FLOATINGPOINT> xW, yW;
 
  // As to Flanagan's documentation they perform weigthed regression if the number or non-zero weigths is more than 40%
- for (int i = 0; i < weigths.size(); i++) {
+ for (unsigned int i = 0; i < weigths.size(); i++) {
    	 if (weigths[i] <= 0) {
 	 	numZeroWeigths++;
 	 }
  }
  
- for (int i = 0; i < x.size(); i++) {
+ for (unsigned int i = 0; i < x.size(); i++) {
   	 if (numZeroWeigths >= 0.4 * weigths.size()) {
 		// See: http://www.ncsu.edu/crsc/events/ugw07/Presentations/Crooks_Qiao/Crooks_Qiao_Alt_Presentation.pdf
 		 xW.push_back(sqrt(weigths[i]) * x[i]);
@@ -1445,7 +1444,7 @@ FLOATINGPOINT Server::AverageServerTrafficKBPS(void)
 
 FLOATINGPOINT Server::CalculationRanking(FLOATINGPOINT futureTemperatureServer, FLOATINGPOINT powerSRV, FLOATINGPOINT DataCenterLoad) 
 {
-	FLOATINGPOINT TLow = 0.00;
+	FLOATINGPOINT TLow = 10.0;
 	FLOATINGPOINT THight = 34.00;
 	FLOATINGPOINT CPULow = 0.00;
 	FLOATINGPOINT CPUHight = 1.00;
@@ -1458,7 +1457,7 @@ FLOATINGPOINT Server::CalculationRanking(FLOATINGPOINT futureTemperatureServer, 
 	FLOATINGPOINT EFF_CPU = 0;
 	FLOATINGPOINT EFF_Power = 0;
 	FLOATINGPOINT EFF_Memory = 0;
-	FLOATINGPOINT EFF_NetWork = 0;
+	FLOATINGPOINT EFF_Traffic = 0;
 
 	FLOATINGPOINT temperature = 0;
 	FLOATINGPOINT utilizationCPU = 0;
@@ -1476,33 +1475,21 @@ FLOATINGPOINT Server::CalculationRanking(FLOATINGPOINT futureTemperatureServer, 
 	speedKBPS = this->ReturnBandWidthServerKBPS();
 	
 	powerS = powerSRV;
+
+	EFF_Temp = 1 - pow(((temperature - TLow) / (THight - TLow)), E_TEMPERATURE);
+
+	EFF_CPU = 1 - pow(((utilizationCPU  - CPULow) / (CPUHight - CPULow)), E_CPU);
+
+	EFF_Power = 1 - pow(((powerS - PowerLow) / (PowerHight - PowerLow)), E_POWER);
+	//EFF_Power = 1 - pow((((powerS - GetFanPower()) - PowerLow) / (PowerHight - PowerLow)), E_POWER);
+
+	EFF_Memory = pow((((memoryServer - utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow)), E_MEMORY);
+
+	EFF_Traffic = 1 - pow(((trafficKBPS - 0) / (FLOATINGPOINT (speedKBPS  - 0))), E_TRAFFIC); 
+
+	return (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
+
 	
-	//EFF_CPU = 1 - pow(((utilizationCPU  - CPULow) / (CPUHight - CPULow)), 3);
-	EFF_CPU = 1 - ((utilizationCPU - CPULow) / (CPUHight - CPULow));
-
-	//EFF_Power = 1 - pow((((powerS - GetFanPower()) - PowerLow) / (PowerHight - PowerLow)), 3);
-	EFF_Power = 1 - ((powerS - PowerLow) / (PowerHight - PowerLow));
-
-	//EFF_Memory = pow((((memoryServer - utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow)), 3);
-	EFF_Memory = (((memoryServer - utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow));
-
-	EFF_Temp = 1 - pow(((temperature - TLow) / (THight - TLow)), 3.00);
-
-	EFF_NetWork = 1 - pow(((trafficKBPS - 0) / (FLOATINGPOINT (speedKBPS  - 0))), 2.00); 
-
-
-	return EFF_CPU + EFF_Power + EFF_Memory + EFF_Temp + EFF_NetWork;
-
-
-
-/*	if (DataCenterLoad <= 0.40) { //v4
-	    return (EFF_Power);
-	}
-	else {
-	   return (EFF_CPU + EFF_Power + EFF_Memory + EFF_Temp+ EFF_NetWork);
-	}
-*/
-
 
 }
 

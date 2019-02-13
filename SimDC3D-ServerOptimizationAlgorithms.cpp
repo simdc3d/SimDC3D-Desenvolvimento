@@ -564,7 +564,7 @@ void TwoDimensionWeight_OverLoaded::ServerOptimization(int clockSimulation, vect
 }
 
 
-ThreeDimensionMultiObj_OverLoaded_V2::ThreeDimensionMultiObj_OverLoaded_V2(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], POOLServers* opool, const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX])
+THREEDMOBFD_OverLoaded::THREEDMOBFD_OverLoaded(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], POOLServers* opool, const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX])
 {
 	ppoServers = pso;
 	opoolServers = opool;
@@ -577,14 +577,13 @@ ThreeDimensionMultiObj_OverLoaded_V2::ThreeDimensionMultiObj_OverLoaded_V2(Serve
 
 }
 
-void ThreeDimensionMultiObj_OverLoaded_V2::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive)
+void THREEDMOBFD_OverLoaded::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive)
 {
    POOL sv;
    STRUCOPTIMIZATION addServer;
    bool removePOOL;
    int sumRemovePOOL = 0;
    int selected = 0;
-   int powerON = 0;
 
    FLOATINGPOINT power[SIZE_OF_HR_MATRIX]; 
    FLOATINGPOINT futureTemperature = 0.00; 
@@ -625,6 +624,7 @@ void ThreeDimensionMultiObj_OverLoaded_V2::ServerOptimization(int clockSimulatio
 			     power[(*ServerActive)[l].chassi] = power[(*ServerActive)[l].chassi] - (*ppoServers)[(*ServerActive)[l].chassi][(*ServerActive)[l].server]->GetPowerDraw() + (*ppoServers)[(*ServerActive)[l].chassi][(*ServerActive)[l].server]->EstimatePowerDrawWithTemperature((*ServerActive)[l].utilizationCPU, ((*listVMs)[k].VM->AverageCPU()/NUMBER_OF_CORES_IN_ONE_SERVER),(*ServerActive)[l].temperature);  
 			  }
 			  memset((void *)estimateTemperatureServer, 0.00, CHASSIS*SERVERS*sizeof(FLOATINGPOINT)); 
+
 			  // calcula o calor de gerado por cada chassi
 		      for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
 		          for (int j=0; j<NUMBER_OF_CHASSIS; ++j) {
@@ -709,8 +709,6 @@ void ThreeDimensionMultiObj_OverLoaded_V2::ServerOptimization(int clockSimulatio
 		   (*ServerActive)[selected].power = powerServer;
 		   (*ServerActive)[selected].isMigrate = true;
 		   (*ServerActive)[selected].ranking  = (*ppoServers)[(*ServerActive)[selected].chassi][(*ServerActive)[selected].server]->CalculationRanking(futureTemperature, powerServer, (*ServerActive)[selected].dcload);
-		   
-
 	   }
    }
    if (SIMULATES_POOL_SERVER) {
@@ -728,7 +726,7 @@ void ThreeDimensionMultiObj_OverLoaded_V2::ServerOptimization(int clockSimulatio
 }
 
 
- ThreeDimensionMultiObj_Low_V2::ThreeDimensionMultiObj_Low_V2(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX])
+ THREEDMOBFD_Low::THREEDMOBFD_Low(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX])
 {
 	ppoServers = pso;
 
@@ -737,11 +735,10 @@ void ThreeDimensionMultiObj_OverLoaded_V2::ServerOptimization(int clockSimulatio
 			HeatRecirculation[i][j] = HeatRecirculationMatrix[i][j];
 		}
 	}
- 
 }
  
 
-void ThreeDimensionMultiObj_Low_V2::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive)
+void THREEDMOBFD_Low::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive)
 {
 	bool migrate;
 	FLOATINGPOINT power[SIZE_OF_HR_MATRIX]; 

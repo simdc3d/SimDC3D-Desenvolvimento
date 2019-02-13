@@ -184,10 +184,10 @@ public:
 	int ReturnTotalMigrationLinkOverload(void) { return totalMigrationLinkOverload; }
 };
 
-class ThreeDimensionMultiObj_OverLoaded_V2 : public ServerOptimizationAlgorithms
+class THREEDMOBFD_OverLoaded : public ServerOptimizationAlgorithms
 {
 public:
-	ThreeDimensionMultiObj_OverLoaded_V2(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], POOLServers* opool, const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX]);
+	THREEDMOBFD_OverLoaded(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], POOLServers* opool, const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX]);
 	void ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive);
 	int ReturnTotalMigrationOverLoaded(void) { return totalMigrationOverLoaded; }
 	int ReturnTotalMigrationPrecdiction(void) { return totalMigrationPrecdiction; }
@@ -196,10 +196,10 @@ public:
 	int ReturnTotalMigrationLinkOverload(void) { return totalMigrationLinkOverload; }
 };
 
-class ThreeDimensionMultiObj_Low_V2 : public ServerOptimizationAlgorithms
+class THREEDMOBFD_Low : public ServerOptimizationAlgorithms
 {
 public:
-	ThreeDimensionMultiObj_Low_V2(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX]);
+	THREEDMOBFD_Low(Server* (*pso)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], const FLOATINGPOINT HeatRecirculationMatrix[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX]);
 	void ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *listVMs, vector<STRUCOPTIMIZATION> *ServerActive);
 	int ReturnTotalMigrationOverLoaded(void) { return totalMigrationOverLoaded; }
 	int ReturnTotalMigrationPrecdiction(void) { return totalMigrationPrecdiction; }

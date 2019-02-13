@@ -35,9 +35,7 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 	int k = 0;
 	int flag = 0;
 	int links = 0;
-	int linksCore = 0;
 	int acumulator = 0;
-	int acumulatorCore = 0;
 	int capacityEdge = 0;
 	int capacityMaxEdge = 0;
 
@@ -53,16 +51,16 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 				}
 			}
 			k = 0;
-			for (int i = 0; i < lEdgeAggregation.size(); i++) {
+			for (unsigned int i = 0; i < lEdgeAggregation.size(); i++) {
 				trafficTemp += topologyFNSS->getEdge(lEdgeAggregation[i].left, lEdgeAggregation[i].right)->ReturnTraffic();
 			}
-			for (int i = 0; i < lEdgeAggregation.size(); i++) {
+			for (unsigned int i = 0; i < lEdgeAggregation.size(); i++) {
 				if (flag == 1) {
 					break;
 				}
 
 				if (trafficTemp <= (0.8 * topologyFNSS->getEdge(lEdgeAggregation[i].left, lEdgeAggregation[i].right)->getCapacity().getValue())) { // alterar para maior limite de capacidade <= 0.8
-					for (int j = 0; j < lEdgeAggregation.size(); j++) {
+					for (unsigned int j = 0; j < lEdgeAggregation.size(); j++) {
 						if (lEdgeAggregation[j].right != lEdgeAggregation[i].right) {
 							topologyFNSS->powerOFFEdge(lEdgeAggregation[j].left, lEdgeAggregation[j].right);
 							flag = 1;
@@ -87,17 +85,17 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 			}
 			k = 0;
 
-			for (int i = 0; i < lAggregationCore.size(); i++) {
+			for (unsigned int i = 0; i < lAggregationCore.size(); i++) {
 				trafficTemp += topologyFNSS->getEdge(lAggregationCore[i].left, lAggregationCore[i].right)->ReturnTraffic();
 			}
 
-			for (int i = 0; i < lAggregationCore.size(); i++) {
+			for (unsigned int i = 0; i < lAggregationCore.size(); i++) {
 				if (flag == 1) {
 					break;
 				}
 
 				if (trafficTemp <= (0.8 * topologyFNSS->getEdge(lAggregationCore[i].left, lAggregationCore[i].right)->getCapacity().getValue())) { // alterar para maior limite de capacidade <= 0.8
-					for (int j = 0; j < lAggregationCore.size(); j++) {
+					for (unsigned int j = 0; j < lAggregationCore.size(); j++) {
 						if (lAggregationCore[j].right != lAggregationCore[i].right) {
 							topologyFNSS->powerOFFEdge(lAggregationCore[j].left, lAggregationCore[j].right);
 							flag = 1;
@@ -123,7 +121,7 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 					}
 
 					if (trafficTemp <= (0.8 * topologyFNSS->getEdge(lAggregationCore[i].left, lAggregationCore[i].right)->getCapacity().getValue())) { // alterar para maior limite de capacidade <= 0.8
-						for (int j = 0; j < lAggregationCore.size(); j++) {
+						for (unsigned int j = 0; j < lAggregationCore.size(); j++) {
 							if (lAggregationCore[j].right != lAggregationCore[i].right) {
 								topologyFNSS->powerOFFEdge(lAggregationCore[j].left, lAggregationCore[j].right);
 								flag = 1;
@@ -156,9 +154,7 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 			}
 			flag = 0;
 			links = 0;
-			linksCore = 0;
 			acumulator = 0;
-			acumulatorCore = 0;
 			trafficTemp = 0;//999999
 			lAggregationCore.clear();
 		}
@@ -178,17 +174,17 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 				}
 				k = 0;
 
-				for (int i = 0; i < lEdgeCore.size(); i++) {
+				for (unsigned int i = 0; i < lEdgeCore.size(); i++) {
 					trafficTemp += topologyFNSS->getEdge(lEdgeCore[i].left, lEdgeCore[i].right)->ReturnTraffic();
 				}
 
-				for (int i = 0; i < lEdgeCore.size(); i++) {
+				for (unsigned int i = 0; i < lEdgeCore.size(); i++) {
 					if (flag == 3) {
 						break;
 					}
 
 					if (trafficTemp <= (0.8 * topologyFNSS->getEdge(lEdgeCore[i].left, lEdgeCore[i].right)->getCapacity().getValue())) { // alterar para maior limite de capacidade <= 0.8
-						for (int j = 0; j < lEdgeCore.size(); j++) {
+						for (unsigned int j = 0; j < lEdgeCore.size(); j++) {
 							if (lEdgeCore[j].right != lEdgeCore[i].right) {
 								topologyFNSS->powerOFFEdge(lEdgeCore[j].left, lEdgeCore[j].right);
 								flag += 1;
@@ -214,7 +210,7 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 						}
 
 						if (trafficTemp <= (0.8 * topologyFNSS->getEdge(lEdgeCore[i].left, lEdgeCore[i].right)->getCapacity().getValue())) { // alterar para maior limite de capacidade <= 0.8
-							for (int j = 0; j < lEdgeCore.size(); j++) {
+							for (unsigned int j = 0; j < lEdgeCore.size(); j++) {
 								if (lEdgeCore[j].right != lEdgeCore[i].right) {
 									topologyFNSS->powerOFFEdge(lEdgeCore[j].left, lEdgeCore[j].right);
 									flag += 1;
@@ -224,8 +220,6 @@ void CarpoOptimizationAlgorithm::OptimizationTopology()
 					}
 				}
 				flag = 0;
-				linksCore = 0;
-				acumulatorCore = 0;
 				trafficTemp = 0;//999999
 				lEdgeCore.clear();
 			}

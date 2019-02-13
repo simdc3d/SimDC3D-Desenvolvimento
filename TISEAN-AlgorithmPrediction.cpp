@@ -44,8 +44,8 @@ extern void check_alloc(void *pnt);
 extern void solvele(double **mat,double *vec,unsigned int n);
 
 extern bool PRINTSCREEN;
-extern int DIM;
-extern int DELAY;
+extern unsigned int DIM;
+extern unsigned int DELAY;
 extern int CENTER;
 extern int STEP;
 extern unsigned int COLUMN;
@@ -273,7 +273,7 @@ double forecast_errorRBF(unsigned long i0,unsigned long i1)
   int i,n;
   double h,error=0.0;
 
-  for (n=i0+(DIM-1)*DELAY;n<i1-STEP;n++) {
+  for (n=i0+(DIM-1)*DELAY; n < (i1-STEP); n++) {
     h=coefs[0];
     for (i=1;i<=CENTER;i++)
       h += coefs[i]*rbf(&series[n],center[i-1]);
@@ -583,7 +583,7 @@ void make_codingPOLYNOM(int ord,int d,int fac,int cur)
 
 void make_fitPOLYNOM(void)
 {
-  int i=0,j=0,k=0;
+  unsigned int i=0,j=0,k=0;
   double **mat,*b;
   
   check_alloc(b=(double*)malloc(sizeof(double)*pars));
@@ -649,7 +649,7 @@ void decodePOLYNOM(int *out,int dimen,long cur,long fac)
 
 double make_errorPOLYNOM(unsigned long i0,unsigned long i1)
 {
-  int j=0,k=0;
+  unsigned int j=0,k=0;
   double h=0.0,err=0.0;
   
   err=0.0;
@@ -667,7 +667,7 @@ double make_errorPOLYNOM(unsigned long i0,unsigned long i1)
 
 void make_castPOLYNOM()
 {
-  int i=0,j=0,k=0,hi=0;
+  unsigned int i=0,j=0,k=0,hi=0;
   double casted=0.0;
   
   for (i=0;i<=(DIM-1)*DELAY;i++) {
