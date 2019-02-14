@@ -150,7 +150,8 @@ FLOATINGPOINT VirtualMachine::HowMuchCPULoadWillThisVMRequire()
 FLOATINGPOINT VirtualMachine::RunVMAndReturnActualTime(FLOATINGPOINT sec, int chassiVM, int serverVM)
 {
 	if (isFinished) {
-		cout << "Error: Finished VM consumed cpu time!!!! runTimeSec =  " << runTimeSec << "  avgCPUTimeSec = " << avgCPUTimeSec << " sec " << sec << endl;
+	   cout << "SIMDC3D-ERROR: Finished VM consumed cpu time!!!! runTimeSec =  " << runTimeSec << "  avgCPUTimeSec = " << avgCPUTimeSec << " sec " << sec << endl;
+	   exit(0);
 	}
 
 	if (runTimeSec < sec) {
@@ -316,7 +317,6 @@ void VirtualMachine::UpdateDataFlow(int chassiO, int serverO, string nodeFNSS_O)
 void VirtualMachine::InsertNewVM(VirtualMachine* newVirtualMachine)
 { 
   newVM = newVirtualMachine;
-  //cout << "newVM " << newVM << endl;
 }
 
 VirtualMachine* VirtualMachine::ReturnNewVM(void)

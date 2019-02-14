@@ -37,7 +37,6 @@ void FFD_Low::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *li
 			  if ((((*ServerActive)[l].utilizationCPU + ((*listVMs)[k].VM->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].isMigrate)) {
  			     continue;
 			  }
-			  //cout << "migrando " << (*listVMs)[k].chassi << " Server " << (*listVMs)[k].server << " para " << (*ServerActive)[l].chassi << " server " <<  (*ServerActive)[l].server << endl; 
 		      (*ppoServers)[(*listVMs)[k].chassi][(*listVMs)[k].server]->MoveVMTo(ppoServers, (*ServerActive)[l].chassi, (*ServerActive)[l].server, (*listVMs)[k].VM);
 			  (*ServerActive)[l].isMigrate = true;
 			  totalMigrationLowUtilization++;
@@ -54,7 +53,6 @@ void FFD_Low::ServerOptimization(int clockSimulation, vector<STRUCMIGRATION> *li
       sort(consolidate.begin(), consolidate.end(), sortDecreasingUtilizationCPU); 
       for(int k = 1; k < static_cast<int> (consolidate.size()); k++) {
 		 if ((consolidate[0].chassi != consolidate[k].chassi) && (consolidate[0].server != consolidate[k].server))  {
-   		    //cout << "migrando consolidando " << consolidate[k].chassi<< " Server " << consolidate[k].server << " para " << consolidate[0].chassi << " server " <<  consolidate[0].server << endl; 
 			(*ppoServers)[consolidate[k].chassi][consolidate[k].server]->MoveVMTo(ppoServers, consolidate[0].chassi, consolidate[0].server, consolidate[k].VM);
 			totalMigrationLowUtilization++;
             break; 
@@ -104,7 +102,7 @@ void FFD_OverLoaded::ServerOptimization(int clockSimulation, vector<STRUCMIGRATI
 	   }
 	   if (removePOOL) {
  		  // Remove server POOL
-          if (SIMULATES_POOL_SERVER) {
+          if (SIMULATES_POOL_SERVER) { // verifies that the pool is enabled
 		     sv = opoolServers->RemoveServerPOOL(ppoServers);
 		     if (sv.chassi != -1) {
 				(*ppoServers)[(*listVMs)[k].chassi][(*listVMs)[k].server]->MoveVMTo(ppoServers, sv.chassi, sv.server, (*listVMs)[k].VM);
@@ -137,7 +135,7 @@ void FFD_OverLoaded::ServerOptimization(int clockSimulation, vector<STRUCMIGRATI
 
    if (SIMULATES_POOL_SERVER) {
       if (sumRemovePOOL > 0) {
-	     opoolServers->AddPowerOn(sumRemovePOOL);
+	     opoolServers->AddPowerOn(sumRemovePOOL); // Calls to the pool insert new servers
 	  }
    }
 

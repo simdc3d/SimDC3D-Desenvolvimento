@@ -95,7 +95,7 @@ POOL POOLServers::RemoveServerPOOL(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SE
      
  if (serversPOOL.size() > 0) {
     //update the temperature
-	for (int i=0; i < serversPOOL.size(); i++){
+	for (unsigned int i=0; i < serversPOOL.size(); i++){
         serversPOOL[i].temperature=(*sv)[serversPOOL[i].chassi][serversPOOL[i].server]->CurrentInletTemperature();
     }
 
@@ -121,7 +121,7 @@ void POOLServers::ServerPowerON(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 
   if (serversPowerOFF.size() > 0) {
      //update the temperature
-	 for (int i=0; i < serversPowerOFF.size(); i++){
+	 for (unsigned int i=0; i < serversPowerOFF.size(); i++){
 	     serversPowerOFF[i].temperature=(*sv)[serversPowerOFF[i].chassi][serversPowerOFF[i].server]->CurrentInletTemperature();
      }
 
@@ -139,7 +139,7 @@ void POOLServers::ServerPowerON(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 		    serversPowerOFF.erase(serversPowerOFF.begin());
 	     }
 	     else {
-            cout << "SimDC3D - Warning: All servers are power on!!!" << endl;
+            cout << "SimDC3D-NOTICE: All servers are power on !!!" << endl;
 		    break;
 	     }  
      }
@@ -163,7 +163,7 @@ void POOLServers::ServerPowerON(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 		             serversPowerOFF.erase(serversPowerOFF.begin());
 	              }
 	              else {
-                     cout << "All servers are power on!!!" << endl;
+                     cout << "SimDC3D-NOTICE: All servers are power on !!!" << endl;
 		             break;
 	             }
               }
@@ -185,7 +185,7 @@ void POOLServers::ServerPowerON(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 		             serversPowerOFF.erase(serversPowerOFF.begin());
 	              }
 	              else {
-                     cout << "All servers are power on!!!" << endl;
+                     cout << "SimDC3D-NOTICE: All servers are power on !!!" << endl;
 		             break;
 	              }
               }
@@ -196,23 +196,23 @@ void POOLServers::ServerPowerON(Server* (*sv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 }
 
 
-void POOLServers::ServerPowerOFF_in_POOL(Server* (*posv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], int powerOFFServer)
+void POOLServers::ServerPowerOFF_in_POOL(Server* (*posv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], unsigned int powerOFFServer)
 {
   if (powerOFFServer < serversPOOL.size()) {
      //update the temperature
-	 for (int i=0; i < serversPOOL.size(); i++){
+	 for (unsigned int i=0; i < serversPOOL.size(); i++){
          serversPOOL[i].temperature=(*posv)[serversPOOL[i].chassi][serversPOOL[i].server]->CurrentInletTemperature();
      }
 
 	 SortVectorServersPOOL();
 
 	 if (HIBERNATING_SERVER)
-        for (int j=0; j < powerOFFServer; j++) {
+        for (unsigned int j=0; j < powerOFFServer; j++) {
 	   	    (*posv)[serversPOOL[serversPOOL.size()-1].chassi][serversPOOL[serversPOOL.size()-1].server]->TimeHibernatingServer(clockSimulation);
 		    serversPOOL.erase(serversPOOL.end()-1);
 	    }
 	 else {
-        for (int j=0; j < powerOFFServer; j++) {
+        for (unsigned int j=0; j < powerOFFServer; j++) {
 	   	    (*posv)[serversPOOL[serversPOOL.size()-1].chassi][serversPOOL[serversPOOL.size()-1].server]->TimePowerOffServer(clockSimulation);
 		    serversPOOL.erase(serversPOOL.end()-1);
 	    }
@@ -224,7 +224,6 @@ void POOLServers::EveryASecond(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 {
  int sumInitializing = 0;
  int power_off_server = 0;
- int serverIni = 0;
 
  //cout << "PowerOFF " << serversPowerOFF.size() << " PowerON " << serversPowerON.size() << " POOL " << serversPOOL.size() << " Servers ON " << serversON.size() << " Total " << serversPowerOFF.size()+serversPowerON.size()+serversPOOL.size()+serversON.size() << endl;
 
@@ -232,11 +231,11 @@ void POOLServers::EveryASecond(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
  // Turn OFF servers and server insert in the pool	
  if (clockSimulation == 0) {
 	if (SIMULATES_POOL_SERVER) {
-	   cout << "SiMDC3D: Turn OFF servers and server insert in the pool !!!" << endl;
+	   cout << "SiMDC3D-NOTICE: Turn OFF servers and server insert in the pool !!!" << endl;
        PowerOFFDCWithPOOL(psv);
 	}
 	else {
-	   cout << "SiMDC3D: Turn OFF servers !!!" << endl;
+	   cout << "SiMDC3D-NOTICE: Turn OFF servers !!!" << endl;
 	   PowerOFFDCWithoutPOOL(psv);
 	}
  }
@@ -262,7 +261,7 @@ void POOLServers::EveryASecond(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVE
 			    else {
 		           (*psv)[i][j]->TurnOFF();
 			    }
-				for (int k = 0; k < serversON.size(); k++) {
+				for (unsigned int k = 0; k < serversON.size(); k++) {
 					if ((serversON[k].chassi == i) && (serversON[k].server == j)) {
 					   serversON.erase(serversON.begin()+k);
 					   break;
@@ -381,7 +380,7 @@ bool POOLServers::SwapServer(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS
 
   if (serversPowerOFF.size() > 0) {
      //update the temperature
-	 for (int i=0; i < serversPowerOFF.size(); i++){
+	 for (unsigned int i=0; i < serversPowerOFF.size(); i++){
 	     serversPowerOFF[i].temperature=(*psv)[serversPowerOFF[i].chassi][serversPowerOFF[i].server]->CurrentInletTemperature();
      }
 
@@ -408,10 +407,11 @@ bool POOLServers::SwapServer(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS
 		   }
 		}
 		else {
-			cout << "Error: There VMs on a server shutdown request!!!" << endl;
+			cout << "SimDC3D-ERROR: There VMs on a server shutdown request !!!" << endl;
+			exit(0);
 		}
 		// remove server in the pool
-		for (int j=0; j < serversPOOL.size(); j++) {
+		for (unsigned int j=0; j < serversPOOL.size(); j++) {
 			if ((serversPOOL[j].chassi == chassi) && (serversPOOL[j].server == server)) {
 				serversPOOL.erase(serversPOOL.begin()+j);
 				return true;
@@ -434,7 +434,6 @@ void POOLServers::PowerOFFDCWithPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF
 
  servPowerON = int ((NUMBER_OF_CHASSIS*NUMBER_OF_SERVERS_IN_ONE_CHASSIS) * 0.10);
  servPowerOFF = (NUMBER_OF_CHASSIS*NUMBER_OF_SERVERS_IN_ONE_CHASSIS) - servPowerON - SIZE_POOL; 
-	
 
  for (int i=0; i < NUMBER_OF_CHASSIS; ++i) {
      for (int j=0; j < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
@@ -469,7 +468,7 @@ void POOLServers::PowerOFFDCWithPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF
  sortTempServers.erase(sortTempServers.begin(), sortTempServers.begin()+sumPowerOFF);
 
  // insert servers in the pool
- for (int j=0; j < SIZE_POOL; j++) {	
+ for (unsigned int j=0; j < SIZE_POOL; j++) {	
      if (((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsOFF()) || ((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsHibernating()) || ((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsENDING())){
         continue;
 	 }
@@ -483,7 +482,7 @@ void POOLServers::PowerOFFDCWithPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF
 
  // insert servers on
 
- for (int k=0; k < SIZE_POOL; k++) {	
+ for (unsigned int k=0; k < SIZE_POOL; k++) {	
      if (((*psv)[sortTempServers[k].chassi][sortTempServers[k].server]->IsOFF()) || ((*psv)[sortTempServers[k].chassi][sortTempServers[k].server]->IsHibernating()) || ((*psv)[sortTempServers[k].chassi][sortTempServers[k].server]->IsENDING())){
         continue;
 	 }
@@ -501,7 +500,6 @@ void POOLServers::PowerOFFDCWithoutPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER
  POOL servers;	
  vector<POOL> sortTempServers;
  int sumPowerOFF = 0;
- int sumPoolServers = 0;
  int servPowerOFF = 0;
  int servPowerON = 0;
  
@@ -541,7 +539,7 @@ void POOLServers::PowerOFFDCWithoutPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER
  sortTempServers.erase(sortTempServers.begin(), sortTempServers.begin()+sumPowerOFF);
 
  // power on servers
- for (int j=0; j < sortTempServers.size(); j++) {	
+ for (unsigned int j=0; j < sortTempServers.size(); j++) {	
      if (((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsOFF()) || ((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsHibernating()) || ((*psv)[sortTempServers[j].chassi][sortTempServers[j].server]->IsENDING())){
         continue;
 	 }
@@ -560,7 +558,7 @@ void POOLServers::UpdateClockSimulation(int clocksimul)
 
 void POOLServers::PrintPowerOffServer(void)
 {
- for (int i=0; i < sumPowerOff.size(); i++) {
+ for (unsigned int i=0; i < sumPowerOff.size(); i++) {
 	 cout << sumPowerOff[i] << "\t";
  }
  cout << endl << endl; 
@@ -571,7 +569,7 @@ int POOLServers::TotalPowerOffServer(void)
 {
  int sum = 0;
 
- for (int i=0; i < sumPowerOff.size(); i++) {
+ for (unsigned int i=0; i < sumPowerOff.size(); i++) {
 	 sum = sum + sumPowerOff[i];
  }
  return sum; 

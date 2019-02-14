@@ -27,7 +27,7 @@ void RandomSchedulingAlgorithm::AssignVMs()
 		int bestI = rand()%NUMBER_OF_CHASSIS;
 		int bestJ = rand()%NUMBER_OF_SERVERS_IN_ONE_CHASSIS;
 		if (bestI < 0 || bestJ < 0 || bestI > NUMBER_OF_CHASSIS || bestJ > NUMBER_OF_SERVERS_IN_ONE_CHASSIS)
-			cout << "Error: No servers to assign a VM" << endl;
+			cout << "SimDC3D-Warning: No servers to assign a VM !!!" << endl;
 		if ( ((*ppServers)[bestI][bestJ]->IsOFF()) || ((*ppServers)[bestI][bestJ]->IsHibernating()) || ((*ppServers)[bestI][bestJ]->IsENDING()) || ((*ppServers)[bestI][bestJ]->IsPOOL()) || ((*ppServers)[bestI][bestJ]->IsMIGRATING()) || ((*ppServers)[bestI][bestJ]->IsINITIALIZING())) { 	
 			continue;
 		}
@@ -142,7 +142,7 @@ void UniformTaskSchedulingAlgorithm::AssignVMs()
 			}
 		}
 		if (bestI < 0 || bestJ < 0)
-			cout << "Error: No servers to assign a VM" << endl;
+			cout << "SimDC3D-Warning: No servers to assign a VM !!!" << endl;
 		pqVMsToGo->front()->SetClock(*clock);
 		(*ppServers)[bestI][bestJ]->AssignOneVM(pqVMsToGo->front());
 		totalScheduling += 1;
@@ -184,7 +184,7 @@ void BestPerformanceSchedulingAlgorithm::AssignVMs()
 			}
 		}
 		if (bestI < 0 || bestJ < 0) {
-			cout << "Error: No servers to assign a VM" << endl;
+			cout << "SimDC3D-Warning: No servers to assign a VM !!!" << endl;
 		}
 		pqVMsToGo->front()->SetClock(*clock);
 		(*ppServers)[bestI][bestJ]->AssignOneVM(pqVMsToGo->front());
@@ -517,7 +517,7 @@ void TwoDimensionWithPoolSchedulingAlgorithm::AssignVMs()
 		      full = 0;
 		   }
 		   else{
-			   cout << "SimDC3D - Warning: No servers in the pool - Scheduling Algorithm - TwoDimensionWithPoolSchedulingAlgorithm!!!" << endl;
+			   cout << "SimDC3D-NOTICE: No servers in the pool - Scheduling Algorithm - TwoDimensionWithPoolSchedulingAlgorithm !!!" << endl;
 			   break;
 		   }
 	    }
@@ -667,7 +667,7 @@ void TwoDimensionWithPoolAndPredictionSchedulingAlgorithm::AssignVMs()
 		      full = 0;
 		   }
 		   else{
-			   cout << "SimDC3D - Warning: No servers in the pool - Scheduling Algorithm - TwoDimensionWithPoolAndPredictionSchedulingAlgorithm" << endl;
+			   cout << "SimDC3D-NOTICE: No servers in the pool - Scheduling Algorithm - TwoDimensionWithPoolAndPredictionSchedulingAlgorithm !!!" << endl;
 			   break;
 		   }
 		}
@@ -891,10 +891,7 @@ void TwoDimensionSchedulingAlgorithm::AssignVMs()
 
 }
 
-
-
-
-ThreeDimensionMultiObjSchedulingAlgorithm::ThreeDimensionMultiObjSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDSchedulingAlgorithm::THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
@@ -925,7 +922,7 @@ ThreeDimensionMultiObjSchedulingAlgorithm::ThreeDimensionMultiObjSchedulingAlgor
 	}
 }
 
-void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
+void THREEDMOBFDSchedulingAlgorithm::AssignVMs()
 {
  // Parametros
  int TLow = 0;
@@ -933,7 +930,7 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
  FLOATINGPOINT CPULow = 0.00;
  FLOATINGPOINT CPUHight = 1.00;
  FLOATINGPOINT PowerLow = 130;
- FLOATINGPOINT PowerHight = 260;
+ FLOATINGPOINT PowerHight = 305;
  FLOATINGPOINT MemoryLow = 0;
  FLOATINGPOINT MemoryHight = 128000000;
  FLOATINGPOINT EFF_Temp = 0.00;
@@ -941,7 +938,7 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
  FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF_NetWork = 0;
+ FLOATINGPOINT EFF_Traffic = 0;
 
 
  vector<SORTSERVER> serverScheduling;
@@ -967,29 +964,24 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
 			 serverTemp.predictedOverload = false;
 			 serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
 			 serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
-			 // Temperatura;
-			 EFF_Temp = 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)),3);
-
-			 //CPU 
-			 EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
-
-			 // Recirculação de Calor
-			 EFF_HRF =  1 - pow(( (HRF[i] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			 // Consumo Energético
-			 EFF_Power = 1 - pow(((((*ppServers)[i][j]->GetPowerDraw() - (*ppServers)[i][j]->GetFanPower()) - PowerLow) / (PowerHight - PowerLow)),3);
-
-			 // Memoria
-			 EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-
-			 // Network 
-			 EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 3.00);
 
 
-			 serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
+			EFF_Temp = 1 - pow(((serverTemp.temperature - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+			//cout << " EFF_Temp " << EFF_Temp << " EFF_TEMP1 " << 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)), E_TEMPERATURE) << endl;
 
+			EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+			//cout << " EFF_CPU " << EFF_CPU << " EFF_CPU " << 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), E_CPU);
+			//getchar();
 
-			 serverScheduling.push_back(serverTemp);
+			EFF_Power = 1 - pow((((*ppServers)[i][j]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+
+			EFF_Memory = pow((((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow)), E_MEMORY);
+
+			EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
+
+			serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_Power + EFF_Memory + EFF_Traffic;
+
+			serverScheduling.push_back(serverTemp);
 	     }
      }
 
@@ -1030,7 +1022,7 @@ void ThreeDimensionMultiObjSchedulingAlgorithm::AssignVMs()
 
 }
 
-FLOATINGPOINT ThreeDimensionMultiObjSchedulingAlgorithm::GetHighestTemperatureIncrease()
+FLOATINGPOINT THREEDMOBFDSchedulingAlgorithm::GetHighestTemperatureIncrease()
 {
 /*	FLOATINGPOINT powerDraw[SIZE_OF_HR_MATRIX];
 	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
@@ -1053,7 +1045,7 @@ FLOATINGPOINT ThreeDimensionMultiObjSchedulingAlgorithm::GetHighestTemperatureIn
 }
 
 
-ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
@@ -1084,7 +1076,7 @@ ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::ThreeDi
 	}
 }
 
-void ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
+void THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
 {
  // Parametros
  int TLow = 0;
@@ -1233,7 +1225,7 @@ void ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm::As
 
 }
 
-ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::ThreeDimensionMultiObjAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDAndPoolSchedulingAlgorithm::THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
@@ -1264,7 +1256,7 @@ ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::ThreeDimensionMultiObjAndPoolS
 	}
 }
 
-void ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::AssignVMs()
+void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
 {
  // Parametros
  int TLow = 0;
@@ -1421,7 +1413,7 @@ void ThreeDimensionMultiObjAndPoolSchedulingAlgorithm::AssignVMs()
 
 }
 
-ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
@@ -1452,7 +1444,7 @@ ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::
 	}
 }
 
-void ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
+void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
 {
  // Parametros
  int TLow = 0;

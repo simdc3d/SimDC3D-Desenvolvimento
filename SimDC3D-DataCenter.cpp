@@ -9,7 +9,6 @@
 
 DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topologySW)
 {
-
 	pJobQueue = q;
 	pPool = Pool;
 	pTopology = topologySW;
@@ -83,7 +82,6 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 	    thread_R[i] = 0;
 	}
 
-	//gen = new std::default_random_engine ((int) time(NULL));
 	gen = new std::default_random_engine((int)SEED*time(NULL));
 
 	dist = new std::uniform_int_distribution<int>(1, NUMBER_NODES_TRAFFIC_MATRIX);
@@ -118,22 +116,22 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 	else if (SCHEDULING_ALGORITHM == "2D")
 		pSchedulingAlgorithm = new TwoDimensionSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ")
-		pSchedulingAlgorithm = new ThreeDimensionMultiObjSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
+		pSchedulingAlgorithm = new THREEDMOBFDSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_POOL")
-		pSchedulingAlgorithm = new ThreeDimensionMultiObjAndPoolSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
+		pSchedulingAlgorithm = new THREEDMOBFDAndPoolSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_PREDICTION")
-		pSchedulingAlgorithm = new ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
+		pSchedulingAlgorithm = new THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_POOL_AND_PREDICTION")
-		pSchedulingAlgorithm = new ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
+		pSchedulingAlgorithm = new THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 
 	else {
-		cout << "SIMDC3D-ERROR: Unknown scheduling algorithm!!!" << endl;
+		cout << "SIMDC3D-ERROR: Unknown scheduling algorithm !!!" << endl;
 		exit(0);
 	}
 
 	if ((SCHEDULING_ALGORITHM == "2D_POOL") || (SCHEDULING_ALGORITHM == "2D_POOL_AND_PREDICTION") || (SCHEDULING_ALGORITHM == "2D_PREDICTION") || (SCHEDULING_ALGORITHM == "2D")) {
 		if ((SCHEDULER_2D_WEIGHT_TEMPERATURE + SCHEDULER_2D_WEIGHT_HEAT_RECIRCULATION + SCHEDULER_2D_WEIGHT_LOAD_CPU) != 1) {
-			cout << "SIMDC3D-ERROR: Sum of weights (SCHEDULER_2D_WEIGHT_TEMPERATURE, SCHEDULER_2D_WEIGHT_HEAT_RECIRCULATION and SCHEDULER_2D_WEIGHT_LOAD_CPU) is different from one" << endl;
+			cout << "SIMDC3D-ERROR: Sum of weights (SCHEDULER_2D_WEIGHT_TEMPERATURE, SCHEDULER_2D_WEIGHT_HEAT_RECIRCULATION and SCHEDULER_2D_WEIGHT_LOAD_CPU) is different from 1 !!!" << endl;
 			exit(0);
 		}
 	}
@@ -146,7 +144,7 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 			pCRAC = new Agressive_Mode(&pServers);
 		}
 		else {
-			cout << "SIMDC3D-ERROR: Unknown Policy of Temperature. Use default value (Default)" << endl;
+			cout << "SIMDC3D-WARNING: Unknown policy of temperature. Use default value (Default) !!!" << endl;
 			pCRAC = new Police_Default(&pServers);
 		}
 	}
@@ -158,12 +156,12 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		else if (OPTIMIZATION_ALGORITHM_LOW_UTILIZATION == "PABFD")
 			policyLow = new PABFD_Low(&pServers);
 		else if (OPTIMIZATION_ALGORITHM_LOW_UTILIZATION == "3DMOBFD")
-			policyLow = new ThreeDimensionMultiObj_Low_V2(&pServers,  HeatRecirculationMatrixD);
+			policyLow = new THREEDMOBFD_Low(&pServers,  HeatRecirculationMatrixD);
 		else if (OPTIMIZATION_ALGORITHM_LOW_UTILIZATION == "2D_WEIGHT")
 			policyLow = new TwoDimensionWeight_Low(&pServers);
 		else {
-			cout << "SIMDC3D-ERROR: Unknown optimization algorithm Low Utilization. Use default value (3D_MULTI_OBJ)" << endl;
-			policyLow = new ThreeDimensionMultiObj_Low_V2(&pServers,  HeatRecirculationMatrixD);
+			cout << "SIMDC3D-WARNING: Unknown optimization algorithm low utilization. Use default value (3D_MULTI_OBJ) !!!" << endl;
+			policyLow = new THREEDMOBFD_Low(&pServers,  HeatRecirculationMatrixD);
 		}
 
 		// OVERLOAD
@@ -172,61 +170,60 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		else if (OPTIMIZATION_ALGORITHM_OVERLOAD_UTILIZATION == "PABFD")
 			policyOverLoaded = new PABFD_OverLoaded(&pServers, pPool);
 		else if (OPTIMIZATION_ALGORITHM_OVERLOAD_UTILIZATION == "3DMOBFD")
-			policyOverLoaded = new ThreeDimensionMultiObj_OverLoaded_V2(&pServers, pPool, HeatRecirculationMatrixD);
+			policyOverLoaded = new THREEDMOBFD_OverLoaded(&pServers, pPool, HeatRecirculationMatrixD);
 		else if (OPTIMIZATION_ALGORITHM_OVERLOAD_UTILIZATION == "2D_WEIGHT")
 			policyOverLoaded = new TwoDimensionWeight_OverLoaded(&pServers, pPool);
 		else {
-			cout << "SIMDC3D-ERROR: Unknown optimization algorithm Overload Utilization. Use default value (3D_MULTI_OBJ)" << endl;
-			policyOverLoaded = new ThreeDimensionMultiObj_OverLoaded_V2(&pServers, pPool, HeatRecirculationMatrixD);
+			cout << "SIMDC3D-WARNING: Unknown optimization algorithm overload utilization. Use default value (3D_MULTI_OBJ) !!!" << endl;
+			policyOverLoaded = new THREEDMOBFD_OverLoaded(&pServers, pPool, HeatRecirculationMatrixD);
 		}
 		// TEMPERATURE
 		if (OPTIMIZATION_ALGORITHM_OVERHEATING_TEMPERATURE == "HIGH_TEMPERATURE")
 			policyHightTemperature = new Police_High_Temperature(&pServers, pPool);
 		else if (OPTIMIZATION_ALGORITHM_OVERHEATING_TEMPERATURE == "PABFD")
 			policyHightTemperature = new PABFD_Temperature(&pServers, pPool);
-		else if (OPTIMIZATION_ALGORITHM_OVERHEATING_TEMPERATURE == "3D_MULTI_OBJ")
-			policyHightTemperature = new ThreeDimensionMultiObj_OverLoaded_V2(&pServers, pPool, HeatRecirculationMatrixD);
+		else if (OPTIMIZATION_ALGORITHM_OVERHEATING_TEMPERATURE == "3DMOBFD")
+			policyHightTemperature = new THREEDMOBFD_OverLoaded(&pServers, pPool, HeatRecirculationMatrixD);
 		else {
-			cout << "SIMDC3D-ERROR: Unknown optimization algorithm Temperature. Use default value (Default)" << endl;
+			cout << "SIMDC3D-WARNING: Unknown optimization algorithm temperature. Use default value (HIGH_TEMPERATURE) !!!" << endl;
 			policyHightTemperature = new Police_High_Temperature(&pServers, pPool);
 		}
+
 		// NETWORK
 		if (OPTIMIZATION_ALGORITHM_LINK_OVERLOAD == "DEFAULT") {
 			policyNetwork = new NetworkLinkOverload(&pServers, pPool);
 		}
 		else {
-			cout << "SIMDC3D-ERROR: Unknown optimization algorithm Network. Use default value (Default)" << endl;
-			exit(0);
+			cout << "SIMDC3D-Warning: Unknown optimization link overload. Use default value (Default) !!!" << endl;
+			policyNetwork = new NetworkLinkOverload(&pServers, pPool);
 		}
-
 
 		if ((VMS_ALGORITHM_SELECTION == "HIGHER_UTILIZATION_CPU/LESS_MEMORY") || (VMS_ALGORITHM_SELECTION == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY") ||
 			(VMS_ALGORITHM_SELECTION == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY/HIGHER_IO_NETWORK") || (VMS_ALGORITHM_SELECTION == "HIGHER_UTILIZATION_AVERAGE_CPU") ||
 			(VMS_ALGORITHM_SELECTION == "LESS_MEMORY") || (VMS_ALGORITHM_SELECTION == "RANDOM_SELECTION") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_IO_NETWORK")) {
-
-		}
-		else {
-			cout << "Error: unknown VMS_ALGORITHM_SELECTION. Use default value (HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY)" << endl;
+			cout << "SimDC3D-NOTICE: Configured VMS_ALGORITHM_SELECTION = " << VMS_ALGORITHM_SELECTION << "." << endl;
+		} else {
+			cout << "SIMDC3D-Warning: Unknown VMS_ALGORITHM_SELECTION. Use default value (HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY) !!!" << endl;
 			VMS_ALGORITHM_SELECTION = "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY";
 		}
 
 		if ((VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_CPU/LESS_MEMORY") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY") ||
 			(VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY/HIGHER_IO_NETWORK") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_UTILIZATION_AVERAGE_CPU") ||
 			(VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "LESS_MEMORY") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "RANDOM_SELECTION") || (VMS_ALGORITHM_SELECTION_OVERLOADED_LINK == "HIGHER_IO_NETWORK")) {
-		}
-		else {
-			cout << "Error: unknown VMS_ALGORITHM_SELECTION. Use default value (HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY)" << endl;
+			cout << "SimDC3D-NOTICE: Configured VMS_ALGORITHM_SELECTION_OVERLOADED_LINK = " << VMS_ALGORITHM_SELECTION_OVERLOADED_LINK << "." << endl;
+
+		} else {
+			cout << "SIMDC3D-Warning: Unknown VMS_ALGORITHM_SELECTION_OVERLOADED_LINK. Use default value (HIGHER_IO_NETWORK) !!!" << endl;
 			VMS_ALGORITHM_SELECTION_OVERLOADED_LINK = "HIGHER_IO_NETWORK";
 		}
 	}
 
-	if ((TYPE_TOPOLOGY == "2LAYER") || (TYPE_TOPOLOGY == "3LAYER") || (TYPE_TOPOLOGY == "FAT-TREE") || (TYPE_TOPOLOGY == "BCUBE")) {
+	if ((TYPE_TOPOLOGY == "2LAYER") || (TYPE_TOPOLOGY == "3LAYER")) {
+	   cout << "SimDC3D-NOTICE: Configured TYPE_TOPOLOGY = " << TYPE_TOPOLOGY << "." << endl;
+	} else {
+	   cout << "SIMDC3D-ERROR: Unknown topology (" << TYPE_TOPOLOGY << ") !!!" << endl;
+	   exit(0);
 	}
-	else {
-		 cout << "SIMDC3D-ERROR: Unknown VMS_ALGORITHM_SELECTION. Use default value (HIGHER_UTILIZATION_AVERAGE_CPU/LESS_MEMORY)" << endl;
-		 exit(0);
-	}
-
 
 	if ( (OPTIMIZATION_ALGORITHM_OVERLOAD_UTILIZATION == "3DMOBFD") || (OPTIMIZATION_ALGORITHM_LOW_UTILIZATION == "3DMOBFD") || (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ") ) {
 	   if ( (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) || (WEIGHT_TEMPERATURE != 1) ) {
@@ -247,7 +244,6 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 			   wght += WEIGHT_TRAFFIC;
 
 			if (wght != 1) {
-				
 				cout << "SIMDC3D-ERROR: Sum of weights (" << wght << ") is different from 1 !!!" << endl;
 				exit(0);
 			}
@@ -261,17 +257,13 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 
 		if (SIMULATE_TRAFFIC_MATRIX) {
 			if (SIMULATE_TOPOLOGY_OPTIMIZATION) {
-				if (OPTIMIZATION_ALGORITHM_TOPOLOGY == "DEFAULT") {
-				//topologyOptimization = new CarpoOptimizationAlgorithm(&pServers, &clock, &vmDestinationDataFlowKeyVM);
+			   if (OPTIMIZATION_ALGORITHM_TOPOLOGY == "CARPO") {
+				  topologyOptimization = new CarpoOptimizationAlgorithm(&pServers, pTopology);
 				}
-				else { if (OPTIMIZATION_ALGORITHM_TOPOLOGY == "CARPO") {
-					topologyOptimization = new CarpoOptimizationAlgorithm(&pServers, pTopology);
-					}
-					else {
-						cout << "SIMDC3D-ERROR: The selected topology does not exist!!!" << endl;
-						exit(0);
-					}
-				}
+				else {
+					cout << "SIMDC3D-Warning: Unknown topology optimization algorithm. Use default value (Carpo) !!!" << endl;
+					exit(0);
+ 				}
 			}
 		}
 	}
@@ -283,8 +275,10 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 	}
 
 	for (int i = 0; i<SIZE_OF_HR_MATRIX; ++i) {
-		if (ModedAirTravelTimeFromCRAC[i] > SIZE_OF_HEAT_TIMING_BUFFER)
-			cout << "SIMDC3D-ERROR: HeatRecirculationTimingFromCRAC[" << i << "] > " << SIZE_OF_HEAT_TIMING_BUFFER << endl;
+		if (ModedAirTravelTimeFromCRAC[i] > SIZE_OF_HEAT_TIMING_BUFFER) {
+		   cout << "SIMDC3D-ERROR: HeatRecirculationTimingFromCRAC[" << i << "] > " << SIZE_OF_HEAT_TIMING_BUFFER << endl;
+		   exit(0);
+		}
 	}
 
 	for (int i = 0; i < 101; ++i) {
@@ -307,8 +301,6 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		}
 	}
 
-	//CRACDischargeAirTempChangeRate = 0.001 * CRAC_DISCHARGE_CHANGE_RATE_0_00x;
-		
 	if (RUN_MULTITHREAD) {
 		if (NUMBER_OF_THREADS < 3) {
 			NUMBER_OF_THREADS = 3;
@@ -361,13 +353,13 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		paramThread_TP[processing_threads - 1].r = NUMBER_OF_CHASSIS;
 		// FINISH
 
+		// CREATE THREADS TOPOLOGY
 		if (SIMULATES_NETWORK) {
-			// CREATE THREADS TOPOLOGY
 			sem_init(&semaphore_TO, 0, 0);
 			pthread_barrier_init(&barrier_TO, NULL, NUMBER_OF_THREADS);
 
 			if (pthread_mutex_init(&mutex_TO, NULL) != 0) {
-				cout << "SimDC3D-ERROR: Error create mutex Data Center (mutex_TO)!!! " << endl;
+				cout << "SimDC3D-ERROR: Error create mutex for topology SimDC3D (mutex_TO)!!! " << endl;
 				exit(0);
 			}
 
@@ -392,8 +384,8 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 			   pthread_barrier_init(&barrier_CO, NULL, 9);
 
 			   if (pthread_mutex_init(&mutex_CO, NULL) != 0) {
-				cout << "SimDC3D-ERROR: Error create mutex Data Center (mutex_CO) !!! " << endl;
-				exit(0);
+				  cout << "SimDC3D-ERROR: Error creating mutex for the correlation calculation (mutex_CO) !!! " << endl;
+				  exit(0);
 			   }
 
 			   for (int i = 0; i < 8; i++) {
@@ -411,26 +403,6 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		   }
 		}
 
-		// FINISH
-		/*
-		// CREATE THREADS VARIANCE
-		//processing_threads = (NUMBER_OF_THREADS) - 1;
-		//cover_interval = NUMBER_OF_CHASSIS / processing_threads;
-
-
-		sem_init(&semaphore_VA, 0, 0);
-		pthread_barrier_init(&barrier_VA, NULL, NUMBER_OF_THREADS);
-
-		for (int i = 0; i < processing_threads; i++) {
-		paramThread_VA[i].l = i * cover_interval;
-		paramThread_VA[i].r = i * cover_interval + cover_interval;
-		paramThread_VA[i].tServers = &pServers;
-		paramThread_VA[i].semaphore_Thread = &semaphore_VA;
-		paramThread_VA[i].barrier_Thread = &barrier_VA;
-		pthread_create(&cThread_VA[i], NULL, DataCenter::CalculateVarianceServer, &paramThread_VA[i]);
-		}
-		paramThread_VA[processing_threads-1].r = NUMBER_OF_CHASSIS;
-		// FINISH */
 	}
 }
 
@@ -439,16 +411,6 @@ DataCenter::~DataCenter(void)
 	for (int i = 0; i<NUMBER_OF_CHASSIS; ++i)
 		for (int j = 0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j)
 			delete pServers[i][j];
-
-
-	delete pSchedulingAlgorithm;
-
-/*	if (SIMULATES_MIGRATION_VMS) {
-		delete policyLow;
-		delete policyOverLoaded;
-		delete policyHightTemperature;
-	}*/
-
 
 	vTotalMigrationsPolicyLowUtilizationSparseLog.clear();
 	vTotalMigrationsPolicyTemperatureSparseLog.clear();
@@ -462,7 +424,6 @@ DataCenter::~DataCenter(void)
 	vTotalComputingPowerSparseLog.clear();
 	vTotalPowerFromCRACSparseLog.clear();
 	vUtilizationSparseLog.clear();
-
 
 	varianceArrivalTime.clear();
 	varianceRunTime.clear();
@@ -569,27 +530,6 @@ void DataCenter::EveryASecond(void)
 		}
 	}
 
-	/*
-	// Calculate Variance Server
-	if (RUN_MULTITHREAD){
-	for (int i=0; i < (NUMBER_OF_THREADS-1); i++) {
-	sem_post(&semaphore_VA);
-	}
-	pthread_barrier_wait(&barrier_VA);
-	}
-	else {
-	// call EveryASecond to every server instance
-	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-	for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-	if ( (pServers[i][j]->IsOFF()) || (pServers[i][j]->IsHibernating()) || (pServers[i][j]->IsENDING()) || (pServers[i][j]->IsINITIALIZING()) ) {
-	continue;
-	}
-	pServers[i][j]->CalculatingStandardDeviationCPU();
-	}
-	}
-	}
-	*/
-
 	// verifies that the servers power off or servers power on
 	pPool->EveryASecond(&pServers);
 
@@ -632,7 +572,7 @@ void DataCenter::EveryASecond(void)
 				unsigned int local_temperature = (unsigned int)(pServers[i][j]->CurrentInletTemperature());
 
 				if (local_temperature > 100) {
-					cout << "SimDC3D-ERROR: Local_temperature too big: Servidor " << i << " " << j << " Temperature " << local_temperature << endl;
+					cout << "SimDC3D-ERROR: Local_temperature too big: Server " << i << " " << j << " Temperature " << local_temperature << " !!!" << endl;
 					exit(0);
 				}
 				else {
@@ -641,7 +581,7 @@ void DataCenter::EveryASecond(void)
 
 				unsigned int local_utilization = (unsigned int)(pServers[i][j]->CurrentUtilization() * 100);
 				if (local_utilization > 100) {
-					cout << "SimDC3D-ERROR: Local_utilization too big: " << local_utilization << endl;
+					cout << "SimDC3D-ERROR: Local_utilization too big !!! " << local_utilization << endl;
 					exit(0);
 				}
 				else {
@@ -737,6 +677,7 @@ void DataCenter::EveryASecond(void)
 
 			if (pvFinishedVMs->size() != 0) {
 				cout << "SimDC3D-ERROR: pvFinishedVMs <> zero!!! " << pvFinishedVMs->size() << endl;
+				exit(0);
 			}
 
 			pvFinishedVMs->clear();
@@ -1850,33 +1791,9 @@ void DataCenter::PrintResults(POOLServers* pPool)
 		pTopology->StatisticSwitch();
 	}
 }
-/*
-void DataCenter::PrintVector(void)
-{
-for (int i=0; i<NUMBER_OF_CHASSIS; i++) {
-for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; j++) {
-cout << "Chassi " << i << " Servidor " << j << "Numero de elementos no vetor" << pServers[i][j]->returnSizeVectorUtilizationCPU() << endl;
-for (int k=0; k < pServers[i][j]->returnSizeVectorUtilizationCPU(); k++) {
-cout << pServers[i][j]->returnPositionVectorUtilizationCPU(k) << " " << endl;
-}
-}
-}
-
-for (int i=0; i<NUMBER_OF_CHASSIS; i++) {
-for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; j++) {
-cout << "Chassi " << i << " Servidor " << j << "Numero de elementos no vetor" << pServers[i][j]->returnSizeVectorMemoryUseOfServe() << endl;
-for (int k=0; k < pServers[i][j]->returnSizeVectorMemoryUseOfServe(); k++) {
-cout << pServers[i][j]->returnPositionVectorMemoryUseOfServer(k) << " " << endl;
-}
-}
-}
-
-}*/
 
 void DataCenter::CalculateCorrelation(void)
 {
-	//int ncolum = vmDestinationDataFlowKeyVM.size(); // Number of lines and columns in the matrix will be equal to the number of flows
-	//int vmnumb = 0;
 
 	vector<FLOATINGPOINT> vectorFirstCorr; // Stores the first 10 values of the first flow for the correlation calculation
 	vector<FLOATINGPOINT> vectorSecondCorr; // Stores the first 10 values of the next flow for the correlation calculation
@@ -1988,11 +1905,8 @@ void * DataCenter::CalculateCorrelation_MT(void *args)
 	}
 }
 
-
 int DataCenter::GenerateSeed(void)
 {
 	std::uniform_int_distribution<int> distribution(1, 1000000);
 	return distribution(*gen);
 }
-
-

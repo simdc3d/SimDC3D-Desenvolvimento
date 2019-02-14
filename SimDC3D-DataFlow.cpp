@@ -105,7 +105,8 @@ void DataFlow::EveryASecond(void)
  }
 
  if ( flowMBPS < 0 ) {
-	 cout << "SimDC3D-ERROR: Valor do Fluxo de dados menor que zero !!! " << endl; 
+	 cout << "SimDC3D-ERROR: Data Flow Value less than zero !!! " << endl; 
+	 exit(0);
  }
  
  if ( ( timeToLive > 0 ) || ( timeToLive != 99999) ){
@@ -136,7 +137,7 @@ bool DataFlow::PathExists(void)
 
 void DataFlow::ListPath(void)
 {
- for(int i = 0; i < path.size(); i++) {
+ for(unsigned int i = 0; i < path.size(); i++) {
 	 cout << path[i] << " ";
  }
 }

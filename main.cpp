@@ -219,7 +219,7 @@ bool SIMULATE_TRAFFIC_MATRIX = false;
 
 // setting POOL
 bool SIMULATES_POOL_SERVER = false;
-	int SIZE_POOL = 0;								// The initial size POOL
+	unsigned int SIZE_POOL = 0;								// The initial size POOL
 	bool INCREASE_SIZE_POOL_DYNAMICALLY = false;
 
 // parameters for future work
@@ -2146,7 +2146,7 @@ int main(int argc, char* argv[])
 	}
 
 	// arguments
-	cout << "SimDC3D v1.0" << endl;
+	cout << "SimDC3D v2.0" << endl;
 
 	for(int i = 0; i < argc; i++)
 		cout << argv[i] << " ";
@@ -2165,14 +2165,15 @@ int main(int argc, char* argv[])
 #endif
 	// current working directory
 	char cCurrentPath[FILENAME_MAX];
-	if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))); // yes. intended.
-	   cout << "+ Working Directory: " << cCurrentPath << endl;
-	   
+	if (!GetCurrentDir(cCurrentPath, sizeof(cCurrentPath))) { // yes. intended.
+	   cout << "SIMDC3D-NOTICE: + Working Directory: " << cCurrentPath << endl;
+	}
+
 	// Reading File
 	bool isReadingFinished = false;
 	ifstream ifs(argv[1]);
 	if(!ifs.is_open()) {
-		cout << "Cannot open a file :" << argv[1] << endl;
+		cout << "SIMDC3D-ERROR: Cannot open a file :" << argv[1] << endl;
 		return 1;
 	}
 	vector<SWFLine*> vSWF;
@@ -2240,7 +2241,7 @@ int main(int argc, char* argv[])
 
 	//myDataCenter.Finish();
 
-	cout << "finished" << endl << endl;
+	cout << "SIMDC3D-NOTICE: Finished !!!" << endl << endl;
 
 	//myPoolServers.Print();
 	//myDataCenter.PrintVector();

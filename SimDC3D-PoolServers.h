@@ -13,7 +13,7 @@ extern bool sortPOOLServer(POOL S_A, POOL S_B);
 extern int NUMBER_OF_CHASSIS;
 extern int NUMBER_OF_SERVERS_IN_ONE_CHASSIS;
 extern long CLENGTH;
-extern int SIZE_POOL;
+extern unsigned int SIZE_POOL;
 extern bool INCREASE_SIZE_POOL_DYNAMICALLY;
 extern bool sortTemperature(POOL SV_A, POOL SV_B);
 extern int PERIODIC_LOG_INTERVAL;
@@ -41,7 +41,7 @@ public:
 	void PowerOFFDCWithoutPOOL(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX]);
 	inline int ReturnSizePool(void) { return serversPOOL.size(); }
 	bool SwapServer(Server* (*psv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], int chassi, int server);
-	void ServerPowerOFF_in_POOL(Server* (*posv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], int powerOFFServer);
+	void ServerPowerOFF_in_POOL(Server* (*posv)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], unsigned int powerOFFServer);
 	inline void AddPowerOn(int power_On) { totalPowerOn += power_On;} 
 	inline void AddPowerOff(int power_Off) { totalPowerOff += power_Off;} 
 	void PrintPowerOffServer(void);

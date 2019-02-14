@@ -34,6 +34,26 @@ extern vector<double> runPolynom(vector<double> vetorPredicao);
 extern bool Sort_Ranking(SORTSERVER SV_A, SORTSERVER SV_B);
 
 
+extern int E_TEMPERATURE;
+extern int E_CPU;
+extern int E_POWER;
+extern int E_MEMORY;
+extern int E_TRAFFIC;
+
+extern int ALPHA_3DMOBFD;
+extern int BETA_3DMOBFD;
+extern int GAMMA_3DMOBFD;
+extern int DELTA_3DMOBFD;
+extern int EPSILON_3DMOBFD;
+
+extern float WEIGHT_TEMPERATURE;
+extern float WEIGHT_CPU;
+extern float WEIGHT_POWER;
+extern float WEIGHT_MEMORY;
+extern float WEIGHT_TRAFFIC;
+
+
+
 class SchedulingAlgorithm
 {
 public:
@@ -163,10 +183,10 @@ private:
 };
 
 
-class ThreeDimensionMultiObjSchedulingAlgorithm : public SchedulingAlgorithm
+class THREEDMOBFDSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	ThreeDimensionMultiObjSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
@@ -174,22 +194,10 @@ private:
 	FLOATINGPOINT GetHighestTemperatureIncrease();
 };
 
-class ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
+class THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	ThreeDimensionMultiObjAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
-	void AssignVMs();
-	int returnTotalScheduling(void) { return totalScheduling; }
-private:
-	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
-	FLOATINGPOINT GetHighestTemperatureIncrease();
-};
-
-
-class ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
-{
-public:
-	ThreeDimensionMultiObjAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
@@ -198,10 +206,22 @@ private:
 };
 
 
-class ThreeDimensionMultiObjAndPoolSchedulingAlgorithm : public SchedulingAlgorithm
+class THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	ThreeDimensionMultiObjAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	void AssignVMs();
+	int returnTotalScheduling(void) { return totalScheduling; }
+private:
+	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
+	FLOATINGPOINT GetHighestTemperatureIncrease();
+};
+
+
+class THREEDMOBFDAndPoolSchedulingAlgorithm : public SchedulingAlgorithm
+{
+public:
+	THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:

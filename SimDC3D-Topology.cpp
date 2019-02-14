@@ -67,7 +67,7 @@ TopologySimDC3D::~TopologySimDC3D(void)
 }
 
 
-void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], map <VirtualMachine*, std::string> *vmDataFlowKeyVM)
+void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], map <VirtualMachine*, std::string> *vmDataFlowKeyVM) 
 {
 
  int NumberOfRacks = 0; 
@@ -83,22 +83,22 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
 
 
  if ( (PROPORTION_OF_INTERNAL_COMMUNICATION_BETWEEN_VMS + PROPORTION_OF_EXTERNAL_COMMUNICATION) != 100 ) {
-	 cout << "SIMDC3D: The sum of a PROPORTION_OF_INTERNAL_COMMUNICATION_BETWEEN_VMS + PROPORTION_OF_EXTERNAL_COMMUNICATION is different from 100 !!!!" << endl << endl; 
+	 cout << "SimDC3D-ERROR: The sum of a PROPORTION_OF_INTERNAL_COMMUNICATION_BETWEEN_VMS + PROPORTION_OF_EXTERNAL_COMMUNICATION is different from 100 !!!" << endl << endl; 
 	 exit(0);
  }
 
  // Import topology from file (FNSS)
- cout << "SIMDC3D: Initializing topology import !!!! " << NAME_FILE_TOPOLOGY << endl << endl;
+ cout << "SIMDC3D-NOTICE: Initializing topology import !!!" << NAME_FILE_TOPOLOGY << endl << endl;
 	topology = fnss::Parser::parseTopology(NAME_FILE_TOPOLOGY);
  cout << endl;
- cout << "SIMDC3D: Topology imported and created !!!!" << endl << endl;
+ cout << "SIMDC3D-NOTICE: Topology imported and created !!!" << endl << endl;
 
  if (SIMULATE_TRAFFIC_MATRIX) {
     matrixTraffic = new TrafficMatrixSimDC3D();
 	matrixTraffic->GetMatrixTraffic(numberSamplesTM);
  }
 
- cout << "SIMDC3D: Load energetic consumption in switch !!!!" << endl << endl;
+ cout << "SIMDC3D-NOTICE: Load energetic consumption in switch !!!" << endl << endl;
  topology.insertEnergyConsumption();
   
 
@@ -134,7 +134,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
  NumberOfRacks = ceil((double) NUMBER_OF_CHASSIS /  (double) NUMBER_CHASSI_RACK);
 
  if ( sumHostFNSS != (NUMBER_OF_CHASSIS*NUMBER_OF_SERVERS_IN_ONE_CHASSIS) ) {
-    cout << "SIMDC3D: host number is different from the host number of FNSS !!!" << endl;
+    cout << "SIMDC3D-ERROR: host number is different from the host number of FNSS !!!" << endl;
 	cout << "Switch Core " << SWITCH_CORE << endl;
 	cout << "Switch Aggregation " << SWITCH_AGGREGATION << endl;
 	cout << "Switch Edge " << SWITCH_ACCESS << endl;
@@ -143,7 +143,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
  }
   
  if (SWITCH_ACCESS != NumberOfRacks) {
-    cout << "SIMDC3D: Number of edge switches is different from the number of racks !!!" << endl;
+    cout << "SIMDC3D-ERROR: Number of edge switches is different from the number of racks !!!" << endl;
 	cout << "Switch Edge " << SWITCH_ACCESS << endl;
 	cout << "Racks " << NumberOfRacks << endl;
 	exit(0);
@@ -154,7 +154,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
 	 racks.push_back(new Rack(i));
  }
 
- cout << "SIMDC3D: Inicializing created edges of the FNSS simulator. " << endl << endl; 
+ cout << "SIMDC3D-NOTICE: Inicializing created edges of the FNSS simulator. " << endl << endl; 
 
 
  // get list of all edges
@@ -242,7 +242,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
                 it++;
              }
 			 else {
-                cout << "SimDC3D: Error!!! There is no switch." << endl;
+                cout << "SimDC3D-ERROR: There is no switch. " << topology.getNode((*it).second)->getProperty("type") << " !!!" << endl;
 				exit(0);
 			 }
 		     insert++;
@@ -269,7 +269,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
                 it++;
              }
 			 else {
-                cout << "SimDC3D: Error!!! There is no switch." << endl;
+                cout << "SimDC3D-ERROR: There is no switch." << topology.getNode((*it).second)->getProperty("type") << " !!!" << endl;
 				exit(0);
 			 }
 		     insert=1;
@@ -278,7 +278,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
 	racks[k]->InsertSwitchToRack(to_string(*sw));
  }
  if (switchEdge.size() != racks.size()) {
-	cout << "SIMDC3D: Number of edge switches insert is different from the number of racks !!!" << endl;
+	cout << "SIMDC3D-ERROR: Number of edge switches insert is different from the number of racks ("<< switchEdge.size() << " != " << racks.size() << ") !!!" << endl;
 	exit(0);
  }
 
@@ -291,10 +291,7 @@ void TopologySimDC3D::EveryASecond(int clock_, Server* (*svt)[SIZE_OF_HR_MATRIX]
 
   int chassiTemp = 0;
   int serverTemp = 0;
-  int powerOff = 0;
   int numSort = 0;
-
-  size_t sizeIt = 0;
 
   set<string>::iterator it;
   
@@ -343,11 +340,11 @@ void TopologySimDC3D::EveryASecond(int clock_, Server* (*svt)[SIZE_OF_HR_MATRIX]
 		  }
 
 		  vmTemp = (*tServers)[i][j]->GetALLVMs();		// Retorna todas as Máquinas Virtuais de um Servidor
-		  for (int k=0; k < vmTemp.size(); k++) {
+		  for (unsigned int k=0; k < vmTemp.size(); k++) {
 
 			  dataFlowTemp = vmTemp[k]->ReturnDataFlowVM();		// Retorna todos os fluxos de dados de uma Máquina Virtual
 
-			  for (int l = 0; l < dataFlowTemp.size(); l++) {
+			  for (unsigned int l = 0; l < dataFlowTemp.size(); l++) {
 				  if ( !(dataFlowTemp[l]->DataFlowHasDestination()) ) {      // Check if the flow has destination
 					 if ( (*vmDestinationDataFlowKeyVM).size() != 0) {
                         dist = new std::uniform_int_distribution<int> (0,(*vmDestinationDataFlowKeyVM).size()-1);
@@ -398,12 +395,12 @@ void TopologySimDC3D::EveryASecond(int clock_, Server* (*svt)[SIZE_OF_HR_MATRIX]
 				// Insert traffic on the link
 	            pathFlow = dataFlowTemp[l]->ReturnPath(); // return path 
 
-	            for (int m = 0; m < pathFlow.size()-1; m++) {
+	            for (unsigned int m = 0; m < pathFlow.size()-1; m++) {
 				    if ( !topology.getEdge(pathFlow[m], pathFlow[m+1])->ReturnIsOff() ) { 
 		               topology.getEdge(pathFlow[m], pathFlow[m+1])->AddTraffic(dataFlowTemp[l]->ReturnFlowMBPS());
 					}
 					else {
-					   cout << "SimDC3D-ERROR: Data flow on a disconnected link: " << endl;
+					   cout << "SimDC3D-ERROR: Data flow on a disconnected link !!!" << endl;
 					   exit(0);
 					}
 				 }
@@ -546,12 +543,8 @@ struct lEdges {
 };
 
 void TopologySimDC3D::ReconnectEdges(){
-	//cout << "Entrei na funcao pra ligar os edges" << endl;
-	
 	for (set<pair <string, string> >::iterator it = edges.begin(); it != edges.end(); it++) {
-		//cout << "(*it).first " << (*it).first << " (*it).second " << (*it).second << endl;
 		if (topology.getEdge((*it).first, (*it).second)->ReturnIsOff()) {
-			//cout << "Vou ligar o enlace " << (*it).first << " -> " << (*it).second << endl;
 			topology.powerONEdge((*it).first, (*it).second);
 		}
 	}
@@ -560,7 +553,6 @@ void TopologySimDC3D::ReconnectEdges(){
 
 void TopologySimDC3D::EveryASecondMultiThread_P1(void)
 {
-  fnss::Topology* topologyFNSS;
   vector<VirtualMachine *> vmTemp;
   vector<DataFlow *> dataFlowTemp;
  
@@ -571,20 +563,17 @@ void TopologySimDC3D::EveryASecondMultiThread_P1(void)
 			 for (list<int>::iterator it2 = switchEdge.begin(); it2 != switchEdge.end(); ++it2) {
 				 for (list<int>::iterator iter2 = switchAggregation.begin(); iter2 != switchAggregation.end(); ++iter2) {
 					 if ((*it).first == to_string(*iter2) && ((*it).second == to_string(*it2))) {
-						 //cout << "O enlace " << (*it).first << " -> " << (*it).second << " e um agg igual ao " << to_string(*iter2) << " -> " << to_string(*it2) << endl;
-
 						 ReconnectEdges(); // Reconnect all Edges
-
-										   // Clears the path
+						 // Clears the path
 						 for (int j = 0; j < NUMBER_OF_CHASSIS; ++j) {
 							 for (int k = 0; k < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++k) {
 								 if (((*tServers)[j][k]->IsOFF()) || ((*tServers)[j][k]->IsHibernating()) || ((*tServers)[j][k]->IsENDING()) || ((*tServers)[j][k]->IsPOOL()) || ((*tServers)[j][k]->IsINITIALIZING())) {
 									 continue;
 								 }
 								 vmTemp = (*tServers)[j][k]->GetALLVMs();
-								 for (int l = 0; l < vmTemp.size(); l++) {
+								 for (unsigned int l = 0; l < vmTemp.size(); l++) {
 									 dataFlowTemp = vmTemp[l]->ReturnDataFlowVM();
-									 for (int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
+									 for (unsigned int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
 										 dataFlowTemp[key_L]->ClearPath();
 									 }
 								 }
@@ -598,20 +587,17 @@ void TopologySimDC3D::EveryASecondMultiThread_P1(void)
 			 for (list<int>::iterator it3 = switchAggregation.begin(); it3 != switchAggregation.end(); ++it3) {
 				 for (list<int>::iterator iter3 = switchCore.begin(); iter3 != switchCore.end(); ++iter3) {
 					 if ((*it).first == to_string(*iter3) && ((*it).second == to_string(*it3))) {
-						 //cout << "O enlace " << (*it).first << " -> " << (*it).second << " e um core igual ao " << to_string(*iter3) << " -> " << to_string(*it3) << endl;
-
 						 ReconnectEdges(); // Reconnect all Edges
-
-										   // Clears the path
+ 					     // Clears the path
 						 for (int j = 0; j < NUMBER_OF_CHASSIS; ++j) {
 							 for (int k = 0; k < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++k) {
 								 if (((*tServers)[j][k]->IsOFF()) || ((*tServers)[j][k]->IsHibernating()) || ((*tServers)[j][k]->IsENDING()) || ((*tServers)[j][k]->IsPOOL()) || ((*tServers)[j][k]->IsINITIALIZING())) {
 									 continue;
 								 }
 								 vmTemp = (*tServers)[j][k]->GetALLVMs();
-								 for (int l = 0; l < vmTemp.size(); l++) {
+								 for (unsigned int l = 0; l < vmTemp.size(); l++) {
 									 dataFlowTemp = vmTemp[l]->ReturnDataFlowVM();
-									 for (int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
+									 for (unsigned int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
 										 dataFlowTemp[key_L]->ClearPath();
 									 }
 								 }
@@ -628,20 +614,17 @@ void TopologySimDC3D::EveryASecondMultiThread_P1(void)
 				 for (list<int>::iterator it2 = switchEdge.begin(); it2 != switchEdge.end(); ++it2) {
 					 for (list<int>::iterator iter2 = switchCore.begin(); iter2 != switchCore.end(); ++iter2) {
 						 if ((*it).first == to_string(*iter2) && ((*it).second == to_string(*it2))) {
-							 //cout << "O enlace " << (*it).first << " -> " << (*it).second << " e um agg igual ao " << to_string(*iter2) << " -> " << to_string(*it2) << endl;
-
 							 ReconnectEdges(); // Reconnect all Edges
-
-											   // Clears the path
+ 						     // Clears the path
 							 for (int j = 0; j < NUMBER_OF_CHASSIS; ++j) {
 								 for (int k = 0; k < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++k) {
 									 if (((*tServers)[j][k]->IsOFF()) || ((*tServers)[j][k]->IsHibernating()) || ((*tServers)[j][k]->IsENDING()) || ((*tServers)[j][k]->IsPOOL()) || ((*tServers)[j][k]->IsINITIALIZING())) {
-										 continue;
+									    continue;
 									 }
 									 vmTemp = (*tServers)[j][k]->GetALLVMs();
-									 for (int l = 0; l < vmTemp.size(); l++) {
+									 for (unsigned int l = 0; l < vmTemp.size(); l++) {
 										 dataFlowTemp = vmTemp[l]->ReturnDataFlowVM();
-										 for (int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
+										 for (unsigned int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
 											 dataFlowTemp[key_L]->ClearPath();
 										 }
 									 }
@@ -661,36 +644,32 @@ void TopologySimDC3D::EveryASecondMultiThread_P1(void)
   
  for (list<int>::iterator it=switchCore.begin(); it!=switchCore.end(); ++it) {
 	 if ( topology.getNode(to_string(*it))->isOFFSwitch() ) {
-		 continue;
+		continue;
 	 }
 	 if ( topology.getNode(to_string(*it))->ReturnsActivePorts() == 0 ) {
 		topology.getNode(to_string(*it))->powerOff();
-		//cout << " Desligando switch " << *it << endl;
 	 }
  }
 
  for (list<int>::iterator it=switchAggregation.begin(); it!=switchAggregation.end(); ++it) {
 	 if ( topology.getNode(to_string(*it))->isOFFSwitch() ) {
-		 continue;
+		continue;
 	 }
 	 if ( topology.getNode(to_string(*it))->ReturnsActivePorts() == 0 ) {
 	    topology.getNode(to_string(*it))->powerOff();	
-		//cout << " Desligando switch " << *it << endl;
 	 }
  }
 
  for (list<int>::iterator it=switchEdge.begin(); it!=switchEdge.end(); ++it) {
 	 if ( topology.getNode(to_string(*it))->isOFFSwitch() ) {
-		 continue;
+		continue;
 	 }
 	 if ( topology.getNode(to_string(*it))->ReturnsActivePorts() == 0 ) {
 		topology.getNode(to_string(*it))->powerOff();
-		//cout << " Desligando switch " << *it << endl;
 	 }
  }
  
  ClearTraffic();
-
 }
 
 
@@ -722,13 +701,13 @@ void TopologySimDC3D::EveryASecondMultiThread_P2(int chassi_i, int chassi_f, Ser
 
 		     vmTemp = (*svt)[i][j]->GetALLVMs();
 
-		     for (int k=0; k < vmTemp.size(); k++) {
+		     for (unsigned int k=0; k < vmTemp.size(); k++) {
 
 		 	     dataFlowTemp = vmTemp[k]->ReturnDataFlowVM();
 				 
 				 totaltraffic = 0;
 			     
-				 for (int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
+				 for (unsigned int key_L = 0; key_L < dataFlowTemp.size(); key_L++) {
 
 			         // Check if the flow has destination
 				     if ( !(dataFlowTemp[key_L])->DataFlowHasDestination() ) {
@@ -798,9 +777,6 @@ void TopologySimDC3D::EveryASecondMultiThread_P2(int chassi_i, int chassi_f, Ser
 				        }
 				     }
 
-
-
-
 				     // EveryASecond() DataFlow
 				     dataFlowTemp[key_L]->EveryASecond();
 				  
@@ -816,7 +792,7 @@ void TopologySimDC3D::EveryASecondMultiThread_P2(int chassi_i, int chassi_f, Ser
 				     // Insert traffic on the link
 	                 pathFlow = dataFlowTemp[key_L]->ReturnPath(); // return path 
 
-	                 for (int m = 0; m < pathFlow.size()-1; m++) {
+	                 for (unsigned int m = 0; m < pathFlow.size()-1; m++) {
 				         if ( !topology.getEdge(pathFlow[m], pathFlow[m+1])->ReturnIsOff() ) { 
 					        pthread_mutex_lock( (topology.getEdge(pathFlow[m], pathFlow[m+1])->returnMutex()) );
 							//cout << "Path " << pathFlow[m] << " -> " << pathFlow[m+1] << " " << dataFlowTemp[key_L]->ReturnFlowMBPS() << endl;	
@@ -824,7 +800,7 @@ void TopologySimDC3D::EveryASecondMultiThread_P2(int chassi_i, int chassi_f, Ser
 					        pthread_mutex_unlock( (topology.getEdge(pathFlow[m], pathFlow[m+1])->returnMutex()) );
 					     }
 					     else {
-					        cout << "SimDC3D-ERROR: Data flow on a disconnected link: " << endl;
+					        cout << "SimDC3D-ERROR: Data flow on a disconnected link !!!" << endl;
 					        exit(0);
 				         }
 			         }
@@ -1017,7 +993,7 @@ void TopologySimDC3D::EveryASecondMultiThread_P3(void)
 }*/
 
 bool TopologySimDC3D::isLinkOff(vector<string> path) {
-	for (int i = 0; i < path.size() - 1; i++) {
+	for (unsigned int i = 0; i < path.size() - 1; i++) {
 		if (topology.getEdge(path[i], path[i + 1])->ReturnIsOff()) {
 			return true;
 		}
@@ -1039,19 +1015,19 @@ void TopologySimDC3D::LoadBalancing(DataFlow* dataF, vector< vector<string> > po
 
 	if (possiblePaths.size() == 1) {
 		path = possiblePaths[0];
-		for (int i = 0; i < path.size(); ++i) {
+		for (unsigned int i = 0; i < path.size(); ++i) {
 			dataF->InsertPath(path[i]);
 		}
 	}
 	else {
-		for (int i = 0; i < possiblePaths.size(); ++i) {
+		for (unsigned int i = 0; i < possiblePaths.size(); ++i) {
 			pathTemp = possiblePaths[i];
-			for (int j = 0; j < pathTemp.size() - 1; ++j) {
+			for (unsigned int j = 0; j < pathTemp.size() - 1; ++j) {
 				if (!topology.getEdge(pathTemp[j], pathTemp[j + 1])->ReturnIsOff()) {
 					trafficValueTemp += topology.getEdge(pathTemp[j], pathTemp[j + 1])->returnAverageTraffic();
 				}
 				else {
-					cout << "SimDC3D-ERROR: Data flow on a disconnected link: " << endl;
+					cout << "SimDC3D-ERROR: Data flow on a disconnected link !!!" << endl;
 					exit(0);
 				}
 			}
@@ -1063,7 +1039,7 @@ void TopologySimDC3D::LoadBalancing(DataFlow* dataF, vector< vector<string> > po
 			trafficValueTemp = 0;
 		}
 
-		for (int i = 0; i < path.size(); ++i) {
+		for (unsigned int i = 0; i < path.size(); ++i) {
 			dataF->InsertPath(path[i]);
 		}
 	}
@@ -1082,7 +1058,7 @@ void TopologySimDC3D::AddPath(DataFlow* dataF, vector< vector<string> > possible
 	}
 	else {
 		path = possiblePaths[0];
-		for (int i = 0; i < path.size(); ++i) {
+		for (unsigned int i = 0; i < path.size(); ++i) {
 			dataF->InsertPath(path[i]);
 		}
 	}
@@ -1318,7 +1294,7 @@ double TopologySimDC3D::ReturnTotalEnergyAccessSwitchSparseLog(void)
 {
   double sum = 0.00;
 
-  for(int i=0; i < vTotalEnergyAccessSwitchSparseLog.size(); i++) {
+  for(unsigned int i=0; i < vTotalEnergyAccessSwitchSparseLog.size(); i++) {
 	  sum += vTotalEnergyAccessSwitchSparseLog[i];
   }
   return sum;
@@ -1328,7 +1304,7 @@ double TopologySimDC3D::ReturnTotalEnergyAggregationSwitchSparseLog(void)
 {
   double sum = 0.00;
 
-  for(int i=0; i < vTotalEnergyAggregationSwitchSparseLog.size(); i++) {
+  for(unsigned int i=0; i < vTotalEnergyAggregationSwitchSparseLog.size(); i++) {
 	  sum += vTotalEnergyAggregationSwitchSparseLog[i];
   }
   return sum;
@@ -1338,7 +1314,7 @@ double TopologySimDC3D::ReturnTotalEnergyCoreSwitchSparseLog(void)
 {
   double sum = 0.00;
 
-  for(int i=0; i <vTotalEnergyCoreSwitchSparseLog.size(); i++) {
+  for(unsigned int i=0; i <vTotalEnergyCoreSwitchSparseLog.size(); i++) {
 	  sum += vTotalEnergyCoreSwitchSparseLog[i];
   }
   return sum;
@@ -1346,21 +1322,21 @@ double TopologySimDC3D::ReturnTotalEnergyCoreSwitchSparseLog(void)
 
 void TopologySimDC3D::PrintPowerDrawAccessSwitch(void)
 {
-  for (int i=0; i<vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i<vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
 	  cout << vTotalEnergyAccessSwitchSparseLog[i] << "\t";
   }
   cout << endl;
 }
 void TopologySimDC3D::PrintPowerDrawAggregationSwitch(void)
 {
-  for (int i=0; i< vTotalEnergyAggregationSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyAggregationSwitchSparseLog.size(); ++i) {
 	  cout << vTotalEnergyAggregationSwitchSparseLog[i] << "\t";
   }
   cout << endl;
 }
 void TopologySimDC3D::PrintPowerDrawCoreSwitch(void)
 {
-  for (int i=0; i< vTotalEnergyCoreSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyCoreSwitchSparseLog.size(); ++i) {
 	  cout << vTotalEnergyCoreSwitchSparseLog[i] << "\t";
   }
   cout << endl;
@@ -1368,7 +1344,7 @@ void TopologySimDC3D::PrintPowerDrawCoreSwitch(void)
 
 void TopologySimDC3D::PrintTotalPowerDrawSwitches(void)
 {
-  for (int i=0; i< vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
 	  cout << vTotalEnergyAccessSwitchSparseLog[i] + vTotalEnergyAggregationSwitchSparseLog[i] + vTotalEnergyCoreSwitchSparseLog[i] << "\t";
   }
   cout << endl;
@@ -1381,21 +1357,21 @@ double TopologySimDC3D::ReturnPowerDrawSwitches(int ind)
 
 void TopologySimDC3D::PrintTotalEnergyAccessSwitchSparseLog(void)
 {
-  for (int i=0; i<vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i<vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
 	  cout << (vTotalEnergyAccessSwitchSparseLog[i] * PERIODIC_LOG_INTERVAL)<< "\t";
   }
   cout << endl;
 }
 void TopologySimDC3D::PrintTotalEnergyAggregationSwitchSparseLog(void)
 {
-  for (int i=0; i< vTotalEnergyAggregationSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyAggregationSwitchSparseLog.size(); ++i) {
 	  cout << (vTotalEnergyAggregationSwitchSparseLog[i] * PERIODIC_LOG_INTERVAL) << "\t";
   }
   cout << endl;
 }
 void TopologySimDC3D::PrintTotalEnergyCoreSwitchSparseLog(void)
 {
-  for (int i=0; i< vTotalEnergyCoreSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyCoreSwitchSparseLog.size(); ++i) {
 	  cout << (vTotalEnergyCoreSwitchSparseLog[i] * PERIODIC_LOG_INTERVAL) << "\t";
   }
   cout << endl;
@@ -1403,7 +1379,7 @@ void TopologySimDC3D::PrintTotalEnergyCoreSwitchSparseLog(void)
 
 void TopologySimDC3D::PrintTotalEnergySwitchesSparseLog(void)
 {
-  for (int i=0; i< vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
+  for (unsigned int i=0; i< vTotalEnergyAccessSwitchSparseLog.size(); ++i) {
 	  cout << ((vTotalEnergyAccessSwitchSparseLog[i] + vTotalEnergyAggregationSwitchSparseLog[i] + vTotalEnergyCoreSwitchSparseLog[i]) * PERIODIC_LOG_INTERVAL) << "\t";
   }
   cout << endl;

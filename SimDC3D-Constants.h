@@ -21,3 +21,10 @@ extern int NUMBER_OF_CHASSIS;
 #define UINT64 unsigned long long
 #define FLOATINGPOINT double
 
+#define POWERLOW 130
+#define POWERHIGHT 305
+#define CPULOW 0.00
+#define CPUHIGHT 1.00
+#define TEMPLOW 0
+#define TEMPHIGHT 34
+
