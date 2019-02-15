@@ -68,8 +68,6 @@ protected:
 	POOLServers* ppollServers;
 	int totalScheduling;
 	unsigned int* clock;
-    double HRFLow;	
-    double HRFHight; 
 };
 
 class LowTemperatureFirstSchedulingAlgorithm : public SchedulingAlgorithm
@@ -186,44 +184,37 @@ private:
 class THREEDMOBFDSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
-	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
-	FLOATINGPOINT GetHighestTemperatureIncrease();
 };
 
 class THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
-	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
-	FLOATINGPOINT GetHighestTemperatureIncrease();
 };
 
 
 class THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
-	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
-	FLOATINGPOINT GetHighestTemperatureIncrease();
 };
 
 
 class THREEDMOBFDAndPoolSchedulingAlgorithm : public SchedulingAlgorithm
 {
 public:
-	THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation);
+	THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
 	void AssignVMs();
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
-	FLOATINGPOINT HRF[SIZE_OF_HR_MATRIX];
 };

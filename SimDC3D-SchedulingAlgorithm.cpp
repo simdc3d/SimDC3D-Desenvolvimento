@@ -891,96 +891,303 @@ void TwoDimensionSchedulingAlgorithm::AssignVMs()
 
 }
 
-THREEDMOBFDSchedulingAlgorithm::THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDSchedulingAlgorithm::THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
-	pHeatRecirculationMatrixD = matrixD;
 	ppollServers = ppool;
 	totalScheduling = 0;
 	clock = clockSimulation;
-    HRFLow	= 100000.00;	
-    HRFHight = 0.00;
 
 	SCHEDULING_WITH_PREDICTION = false;
 
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		HRF[i] = 0.0;
-		for (int j=0; j<SIZE_OF_HR_MATRIX; ++j) {
-			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
-		}
-	}
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		if (HRF[i] < HRFLow) {
-		   HRFLow = HRF[i];
-		}
-		if (HRF[i] > HRFHight) {
-		   HRFHight = HRF[i];
-		}
-
-	}
 }
 
 void THREEDMOBFDSchedulingAlgorithm::AssignVMs()
 {
- // Parametros
- int TLow = 0;
- int THight = 34;
- FLOATINGPOINT CPULow = 0.00;
- FLOATINGPOINT CPUHight = 1.00;
- FLOATINGPOINT PowerLow = 130;
- FLOATINGPOINT PowerHight = 305;
- FLOATINGPOINT MemoryLow = 0;
- FLOATINGPOINT MemoryHight = 128000000;
+
  FLOATINGPOINT EFF_Temp = 0.00;
  FLOATINGPOINT EFF_CPU = 0;
- FLOATINGPOINT EFF_HRF = 0;
+ FLOATINGPOINT EFF_Power = 0;
+ FLOATINGPOINT EFF_Memory = 0;
+ FLOATINGPOINT EFF_Traffic = 0;
+ 
+ double powerON = 0;
+ 
+ bool noScheduler;
+
+ vector<SORTSERVER> serverScheduling;
+ 
+ SORTSERVER serverTemp;
+ 
+ queue<VirtualMachine*> VMsScheduler;
+
+ if (!pqVMsToGo->empty()) {
+	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+	    for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+	        if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+		       continue;
+		    }
+		    serverTemp.chassi = i;
+		    serverTemp.server = j;
+		    serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
+			serverTemp.temperatureFuture = 0.0;
+		    serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
+			serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
+			serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
+		 	serverTemp.predictedOverload = false;
+		 	serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
+			serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
+
+			EFF_Temp = 1 - pow(((serverTemp.temperature - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+		 	EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+			EFF_Power = 1 - pow((((*ppServers)[i][j]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+			EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
+			EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
+
+			serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
+//			cout << " serverTemp.ranking " << serverTemp.ranking << " " << EFF_Temp << " " << EFF_CPU << " " << EFF_Power << " " << EFF_Memory << " " << EFF_Traffic << endl;
+//			cout <<  serverTemp.chassi << " "  << serverTemp.server << " " << "serverTemp.memoryServer " << serverTemp.memoryServer << " serverTemp.utilizationMemory " << serverTemp.utilizationMemory << " TOTAL_OF_MEMORY_IN_ONE_SERVER " << TOTAL_OF_MEMORY_IN_ONE_SERVER << endl;
+			serverScheduling.push_back(serverTemp);
+	    }
+    }
+
+    sort(serverScheduling.begin(), serverScheduling.end(), Sort_Ranking);
+ } 
+
+  // assign VMs to Servers
+  while (!pqVMsToGo->empty()) {
+	    noScheduler = false;
+        for (unsigned int i=0; i < serverScheduling.size(); i++) {
+			if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) <= serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE)) {
+   		       serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
+			   serverScheduling[i].utilizationMemory += pqVMsToGo->front()->GetMemUseVM();
+			   pqVMsToGo->front()->SetClock(*clock);
+			   (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
+			   pqVMsToGo->pop();
+			   totalScheduling += 1;
+			   noScheduler = true;
+			   break;
+		    }
+		}
+		if (!noScheduler) {
+			VMsScheduler.push(pqVMsToGo->front());
+			pqVMsToGo->pop();
+		}
+  }
+
+  if (VMsScheduler.size() > 0) {
+     powerON = (int) ceil(((double) VMsScheduler.size() / (double) NUMBER_OF_CORES_IN_ONE_SERVER ));
+     ppollServers->AddPowerOn(powerON);
+  }
+
+  while (!VMsScheduler.empty()) {
+	     pqVMsToGo->push(VMsScheduler.front());
+		 VMsScheduler.pop();
+  }
+
+}
+
+THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
+{
+	ppServers = ps;
+	pqVMsToGo = pqvm;
+	ppollServers = ppool;
+	totalScheduling = 0;
+	clock = clockSimulation;
+
+	SCHEDULING_WITH_PREDICTION = true;
+}
+
+void THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
+{
+
+ FLOATINGPOINT EFF_Temp = 0.00;
+ FLOATINGPOINT EFF_CPU = 0;
+ FLOATINGPOINT EFF_Power = 0;
+ FLOATINGPOINT EFF_Memory = 0;
+ FLOATINGPOINT EFF_Traffic = 0;
+ FLOATINGPOINT powerON = 0;
+
+ bool noScheduler;
+
+ SORTSERVER serverTemp;
+ 
+ queue<VirtualMachine*> VMsScheduler;
+ 
+ vector<double> predictionTemp;
+ vector<SORTSERVER> serverScheduling;
+
+
+ if (!pqVMsToGo->empty()) {
+	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+	    for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+	        if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+		       continue;
+		    }
+		    serverTemp.chassi = i;
+		    serverTemp.server = j;
+		    serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
+			serverTemp.temperatureFuture = 0.0;
+		    serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
+			serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
+			serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
+			serverTemp.predictedOverload = (*ppServers)[i][j]->ReturnCPUPrediction();
+			serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
+			serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
+
+			if ((*ppServers)[i][j]->ReturnSizeVectorTemperature() == SIZE_WINDOWN_PREDICTION) {
+			   if (PREDICTION_ALGORITHM=="POLYNOM"){
+				  predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
+			   } 
+			   else {
+                  if (PREDICTION_ALGORITHM=="RBF"){
+				     predictionTemp = runRBF( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
+				  }
+				  else {
+					 predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction default
+			      }
+			   }  
+			   if (!predictionTemp.empty()) {
+		          if ( predictionTemp[CLENGTH-1] >= 10 && predictionTemp[CLENGTH-1] <= 34) {
+				     serverTemp.temperatureFuture = predictionTemp[CLENGTH-1];
+  			         (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[CLENGTH-1]);
+				     (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
+				     (*ppServers)[i][j]->AddHitPrediction();
+				  }
+			  	  else {
+                     if ( predictionTemp[0] >= 10 && predictionTemp[0] <= 34) {
+					    serverTemp.temperatureFuture = predictionTemp[0];
+						(*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[0]);
+				        (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
+				        (*ppServers)[i][j]->AddHitPrediction();
+				     }
+				     else {
+					    (*ppServers)[i][j]->AddErrorPrediction();
+					    serverTemp.temperatureFuture = (*ppServers)[i][j]->CurrentInletTemperature();
+				     }
+				  }
+			   }
+			   predictionTemp.erase(predictionTemp.begin(), predictionTemp.end());
+			}
+			else {
+			   serverTemp.temperatureFuture = serverTemp.temperature;
+			}
+
+
+
+			EFF_Temp = 1 - pow(((serverTemp.temperatureFuture - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+		 	EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+			EFF_Power = 1 - pow((((*ppServers)[i][j]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+			EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
+			EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
+
+			serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
+
+			//CPU 
+			if (serverTemp.predictedOverload)  {
+			   serverTemp.ranking = 0;
+			}
+			serverScheduling.push_back(serverTemp);
+	     }
+     }
+
+    sort(serverScheduling.begin(), serverScheduling.end(), Sort_Ranking);
+   
+  } 
+
+  // assign VMs to Servers
+  while (!pqVMsToGo->empty())  {
+	    noScheduler = false;
+        for (unsigned int i=0; i < serverScheduling.size(); i++) {
+			if ( (serverScheduling[i].predictedOverload) || (serverScheduling[i].temperatureFuture > EMERGENCY_TEMPERATURE) ) {
+			   continue;
+			}
+			if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) <= serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
+   		       serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
+			   serverScheduling[i].utilizationMemory += pqVMsToGo->front()->GetMemUseVM();
+			   pqVMsToGo->front()->SetClock(*clock);
+			   (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
+			   pqVMsToGo->pop();
+			   totalScheduling += 1;
+			   noScheduler = true;
+			   break;
+		    }
+		}
+		if (!noScheduler) {
+			VMsScheduler.push(pqVMsToGo->front());
+			pqVMsToGo->pop();
+		}
+  }
+
+  if (VMsScheduler.size() > 0) {
+     powerON = (int) ceil(((double) VMsScheduler.size() / (double) NUMBER_OF_CORES_IN_ONE_SERVER ));
+     ppollServers->AddPowerOn(powerON);
+  }
+
+  while (!VMsScheduler.empty())  {
+	     pqVMsToGo->push(VMsScheduler.front());
+		 VMsScheduler.pop();
+  }
+}
+
+THREEDMOBFDAndPoolSchedulingAlgorithm::THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
+{
+	ppServers = ps;
+	pqVMsToGo = pqvm;
+	ppollServers = ppool;
+	totalScheduling = 0;
+	clock = clockSimulation;
+
+	SCHEDULING_WITH_PREDICTION = false;
+
+}
+
+void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
+{
+ 
+ FLOATINGPOINT EFF_Temp = 0.00;
+ FLOATINGPOINT EFF_CPU = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
  FLOATINGPOINT EFF_Traffic = 0;
 
-
  vector<SORTSERVER> serverScheduling;
+ 
  SORTSERVER serverTemp;
- queue<VirtualMachine*> VMsScheduler;
 
- double powerON = 0;
- bool noScheduler;
+ POOL sv;
 
-  if (!pqVMsToGo->empty()) {
-	  for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-	     for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-		     if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
-		        continue;
-		     }
-			 serverTemp.chassi = i;
-		     serverTemp.server = j;
-		     serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
-			 serverTemp.temperatureFuture = 0.0;
-		     serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
-			 serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
-			 serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
-			 serverTemp.predictedOverload = false;
-			 serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
-			 serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
+ int RemovePOOL = 0; 
+ 
+ unsigned int full = 0;
 
+
+ if (!pqVMsToGo->empty()) {
+	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+	    for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+	        if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+		       continue;
+		    }
+
+			serverTemp.chassi = i;
+		    serverTemp.server = j;
+		    serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
+			serverTemp.temperatureFuture = 0.0;
+		    serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
+			serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
+			serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
+		 	serverTemp.predictedOverload = false;
+		 	serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
+			serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
 
 			EFF_Temp = 1 - pow(((serverTemp.temperature - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
-			//cout << " EFF_Temp " << EFF_Temp << " EFF_TEMP1 " << 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)), E_TEMPERATURE) << endl;
-
-			EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
-			//cout << " EFF_CPU " << EFF_CPU << " EFF_CPU " << 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), E_CPU);
-			//getchar();
-
+		 	EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
 			EFF_Power = 1 - pow((((*ppServers)[i][j]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
-
-			EFF_Memory = pow((((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow)), E_MEMORY);
-
+			EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
 			EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
 
-			serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_Power + EFF_Memory + EFF_Traffic;
-
+			serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
 			serverScheduling.push_back(serverTemp);
 	     }
      }
@@ -991,371 +1198,27 @@ void THREEDMOBFDSchedulingAlgorithm::AssignVMs()
 
    // assign VMs to Servers
   while (!pqVMsToGo->empty())  {
-	    noScheduler = false;
-        for(unsigned int i=0; i < serverScheduling.size(); i++) {
-			if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) <= serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
-   		       serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
-			   serverScheduling[i].utilizationMemory -= pqVMsToGo->front()->GetMemUseVM();
-			   pqVMsToGo->front()->SetClock(*clock);
-			   (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
-			   pqVMsToGo->pop();
-			   totalScheduling += 1;
-			   noScheduler = true;
-			   break;
-		    }
-		}
-		if (!noScheduler) {
-			VMsScheduler.push(pqVMsToGo->front());
-			pqVMsToGo->pop();
-		}
-  }
-
-  if (VMsScheduler.size() > 0) {
-     powerON = (int) ceil(((double) VMsScheduler.size() / (double) NUMBER_OF_CORES_IN_ONE_SERVER ));
-     ppollServers->AddPowerOn(powerON);
-  }
-
-  while (!VMsScheduler.empty())  {
-	     pqVMsToGo->push(VMsScheduler.front());
-		 VMsScheduler.pop();
-  }
-
-}
-
-FLOATINGPOINT THREEDMOBFDSchedulingAlgorithm::GetHighestTemperatureIncrease()
-{
-/*	FLOATINGPOINT powerDraw[SIZE_OF_HR_MATRIX];
-	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-		powerDraw[i] = 0.0;
-		for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-			powerDraw[i] += (*ppServers)[i][j]->GetPowerDraw();
-		}
-	}
-	FLOATINGPOINT tempIncrease;
-	FLOATINGPOINT biggestTempIncrease = -100.0;
-	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-		tempIncrease = 0.0;
-		for (int j=0; j<NUMBER_OF_CHASSIS; ++j) {
-			tempIncrease += powerDraw[j]*(*pHeatRecirculationMatrixD)[i][j];
-		}
-		if (tempIncrease > biggestTempIncrease)
-			biggestTempIncrease = tempIncrease;
-	}
-	return biggestTempIncrease;*/
-}
-
-
-THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
-{
-	ppServers = ps;
-	pqVMsToGo = pqvm;
-	pHeatRecirculationMatrixD = matrixD;
-	ppollServers = ppool;
-	totalScheduling = 0;
-	clock = clockSimulation;
-    HRFLow	= 100000.00;	
-    HRFHight = 0.00;
-
-	SCHEDULING_WITH_PREDICTION = true;
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		HRF[i] = 0.0;
-		for (int j=0; j<SIZE_OF_HR_MATRIX; ++j) {
-			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
-		}
-	}
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		if (HRF[i] < HRFLow) {
-		   HRFLow = HRF[i];
-		}
-		if (HRF[i] > HRFHight) {
-		   HRFHight = HRF[i];
-		}
-
-	}
-}
-
-void THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
-{
- // Parametros
- int TLow = 0;
- int THight = 35;
- FLOATINGPOINT CPULow = 0.00;
- FLOATINGPOINT CPUHight = 1.00;
- FLOATINGPOINT PowerLow = 130;
- FLOATINGPOINT PowerHight = 260;
- FLOATINGPOINT MemoryLow = 0;
- FLOATINGPOINT MemoryHight = 128000000;
- FLOATINGPOINT EFF_Temp = 0.00;
- FLOATINGPOINT EFF_CPU = 0;
- FLOATINGPOINT EFF_HRF = 0;
- FLOATINGPOINT EFF_Power = 0;
- FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF_NetWork = 0;
-
- vector<SORTSERVER> serverScheduling;
- SORTSERVER serverTemp;
- queue<VirtualMachine*> VMsScheduler;
- vector<double> predictionTemp;
-
- double powerON = 0;
- bool noScheduler;
-
-  if (!pqVMsToGo->empty()) {
-	  for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-	     for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-		     if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
-		        continue;
-		     }
-			 serverTemp.chassi = i;
-		     serverTemp.server = j;
-		     serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
-			 serverTemp.temperatureFuture = 0.0;
-		     serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
-			 serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
-			 serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
-			 serverTemp.predictedOverload = (*ppServers)[i][j]->ReturnCPUPrediction();
-			 serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
-			 serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
-
-			 if ((*ppServers)[i][j]->ReturnSizeVectorTemperature() == SIZE_WINDOWN_PREDICTION) {
-				if (PREDICTION_ALGORITHM=="POLYNOM"){
-				   predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
-				} 
-				else{
-                   if (PREDICTION_ALGORITHM=="RBF"){
-					   predictionTemp = runRBF( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
-				   }
-				   else {
-					   predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction default
-				   }
-				}  
-			 	if (!predictionTemp.empty()) {
-		           if ( predictionTemp[CLENGTH-1] >= 10 && predictionTemp[CLENGTH-1] <= 34) {
-				      serverTemp.temperatureFuture = predictionTemp[CLENGTH-1];
-  			          (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[CLENGTH-1]);
-				      (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
-				      (*ppServers)[i][j]->AddHitPrediction();
-				   }
-			  	   else {
-                      if ( predictionTemp[0] >= 10 && predictionTemp[0] <= 34) {
-					     serverTemp.temperatureFuture = predictionTemp[0];
-						 (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[0]);
-				         (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
-				         (*ppServers)[i][j]->AddHitPrediction();
-				      }
-				      else {
-					     (*ppServers)[i][j]->AddErrorPrediction();
-					     serverTemp.temperatureFuture = (*ppServers)[i][j]->CurrentInletTemperature();
-				      }
-				  }
-				}
-				predictionTemp.erase(predictionTemp.begin(), predictionTemp.end());
-			 }
-			 else {
-				serverTemp.temperatureFuture = serverTemp.temperature;
-			 }
-
-
-			 // Temperatura;
-			 EFF_Temp = 1 - pow(((serverTemp.temperatureFuture - TLow) / (THight - TLow)),3.00);
-
-			 //CPU 
-			 if (serverTemp.predictedOverload)  {
-				serverTemp.utilizationCPU = 1;
-			 }
-
-			 EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
-
-			 // Recirculação de Calor
-			 EFF_HRF =  1 - pow(( (HRF[i] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			 // Consumo Energético
-			 EFF_Power = 1 - pow(((((*ppServers)[i][j]->GetPowerDraw() - (*ppServers)[i][j]->GetFanPower()) - PowerLow) / (PowerHight - PowerLow)),3);
-
-			 // Memoria
-			 EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-
-			 //NETWORK
-			 EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 3.00);
-
-			 serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
-			 serverScheduling.push_back(serverTemp);
-	     }
-     }
-
-    sort(serverScheduling.begin(), serverScheduling.end(), Sort_Ranking);
-   
-  } 
-
-   // assign VMs to Servers
-  while (!pqVMsToGo->empty())  {
-	    noScheduler = false;
-        for(unsigned int i=0; i < serverScheduling.size(); i++) {
-			if ( (serverScheduling[i].predictedOverload) || (serverScheduling[i].temperatureFuture > EMERGENCY_TEMPERATURE) ) {
-			   continue;
-			 }
-			if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) <= serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
-   		       serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
-			   serverScheduling[i].utilizationMemory -= pqVMsToGo->front()->GetMemUseVM();
-			   pqVMsToGo->front()->SetClock(*clock);
-			   (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
-			   pqVMsToGo->pop();
-			   totalScheduling += 1;
-			   noScheduler = true;
-			   break;
-		    }
-		}
-		if (!noScheduler) {
-			VMsScheduler.push(pqVMsToGo->front());
-			pqVMsToGo->pop();
-		}
-  }
-
-  if (VMsScheduler.size() > 0) {
-     powerON = (int) ceil(((double) VMsScheduler.size() / (double) NUMBER_OF_CORES_IN_ONE_SERVER ));
-     ppollServers->AddPowerOn(powerON);
-  }
-
-  while (!VMsScheduler.empty())  {
-	     pqVMsToGo->push(VMsScheduler.front());
-		 VMsScheduler.pop();
-  }
-
-}
-
-THREEDMOBFDAndPoolSchedulingAlgorithm::THREEDMOBFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
-{
-	ppServers = ps;
-	pqVMsToGo = pqvm;
-	pHeatRecirculationMatrixD = matrixD;
-	ppollServers = ppool;
-	totalScheduling = 0;
-	clock = clockSimulation;
-    HRFLow	= 100000.00;	
-    HRFHight = 0.00;
-
-	SCHEDULING_WITH_PREDICTION = false;
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		HRF[i] = 0.0;
-		for (int j=0; j<SIZE_OF_HR_MATRIX; ++j) {
-			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
-		}
-	}
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		if (HRF[i] < HRFLow) {
-		   HRFLow = HRF[i];
-		}
-		if (HRF[i] > HRFHight) {
-		   HRFHight = HRF[i];
-		}
-
-	}
-}
-
-void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
-{
- // Parametros
- int TLow = 0;
- int THight = 35;
- FLOATINGPOINT CPULow = 0.00;
- FLOATINGPOINT CPUHight = 1.00;
- FLOATINGPOINT PowerLow = 130;
- FLOATINGPOINT PowerHight = 305;
- FLOATINGPOINT MemoryLow = 0;
- FLOATINGPOINT MemoryHight = 128000000;
- FLOATINGPOINT EFF_Temp = 0.00;
- FLOATINGPOINT EFF_CPU = 0;
- FLOATINGPOINT EFF_HRF = 0;
- FLOATINGPOINT EFF_Power = 0;
- FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF_NetWork = 0;
-
- vector<SORTSERVER> serverScheduling;
- SORTSERVER serverTemp;
-
- POOL sv;
-
- int RemovePOOL = 0; 
- unsigned int full = 0;
-
-
-  if (!pqVMsToGo->empty()) {
-	  for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-	     for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-		     if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
-		        continue;
-		     }
-			 serverTemp.chassi = i;
-		     serverTemp.server = j;
-		     serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
-			 serverTemp.temperatureFuture = 0.0;
-		     serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
-			 serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
-			 serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
-			 serverTemp.predictedOverload = false;
-			 serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
-			 serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
-
-
-			 // Temperatura;
-			 EFF_Temp = 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)),3.00);
-
-			 //CPU 
-			 EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
-			 //EFF_CPU = 1 - ((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)); 
-
-			 // Recirculação de Calor
-			 EFF_HRF =  1 - pow(( (HRF[i] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			 // Consumo Energético
-			 EFF_Power = 1 - pow(((((*ppServers)[i][j]->GetPowerDraw() - (*ppServers)[i][j]->GetFanPower()) - PowerLow) / (PowerHight - PowerLow)),3);
-			 //EFF_Power = 1 - (((*ppServers)[i][j]->GetPowerDraw() - PowerLow) / (PowerHight - PowerLow));
-
-			 // Memoria
-			 EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-			 //EFF_Memory = (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow ));  
-
-			 //NETWORK
-			 EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 3.00);
-
-			 serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
-			 //serverTemp.ranking = EFF_Temp + EFF_CPU +  EFF_Power + EFF_Memory + EFF_NetWork;
-
-			 serverScheduling.push_back(serverTemp);
-	     }
-     }
-
-    sort(serverScheduling.begin(), serverScheduling.end(), Sort_Ranking);
-   
-  } 
-
-   // assign VMs to Servers
-  while (!pqVMsToGo->empty())  {
 	    full = 0;
-        for(unsigned int i=0; i < serverScheduling.size(); i++) {
-           if (!pqVMsToGo->empty()) {
-			  if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) < serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
-   		         serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
-				 serverScheduling[i].utilizationMemory += pqVMsToGo->front()->GetMemUseVM();
- 			     pqVMsToGo->front()->SetClock(*clock);
-			     (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
-				 totalScheduling += 1;
-			     pqVMsToGo->pop();
-		      }
-			  else {
-                 if ((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER) >= THRESHOLD_TOP_OF_USE_CPU) || ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) >= serverScheduling[i].memoryServer) || (serverScheduling[i].temperature >= EMERGENCY_TEMPERATURE)) {
-					full++;
-				 }
-				 continue;
-		      }
-		   }
-		   else {
+        for (unsigned int i=0; i < serverScheduling.size(); i++) {
+            if (!pqVMsToGo->empty()) {
+			   if (((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) < serverScheduling[i].memoryServer) && (serverScheduling[i].temperature < EMERGENCY_TEMPERATURE))  {
+   		          serverScheduling[i].utilizationCPU += (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER);
+			 	  serverScheduling[i].utilizationMemory += pqVMsToGo->front()->GetMemUseVM();
+ 			      pqVMsToGo->front()->SetClock(*clock);
+			      (*ppServers)[serverScheduling[i].chassi][serverScheduling[i].server]->AssignOneVM(pqVMsToGo->front());
+				  totalScheduling += 1;
+			      pqVMsToGo->pop();
+		       }
+			   else {
+                  if ((serverScheduling[i].utilizationCPU + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER) >= THRESHOLD_TOP_OF_USE_CPU) || ((serverScheduling[i].utilizationMemory + pqVMsToGo->front()->GetMemUseVM()) >= serverScheduling[i].memoryServer) || (serverScheduling[i].temperature >= EMERGENCY_TEMPERATURE)) {
+					 full++;
+				  }
+				  continue;
+		       }
+		    }
+		    else {
 			  break;
-		   }
+		    }
 		}
 		if (full == serverScheduling.size()) {
 		   sv = ppollServers->RemoveServerPOOL(ppServers);
@@ -1371,25 +1234,14 @@ void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
 			  serverTemp.speedKBPS = (*ppServers)[sv.chassi][sv.server]->ReturnBandWidthServerKBPS();
 			  serverTemp.trafficKBPS = (*ppServers)[sv.chassi][sv.server]->ReturnServerTrafficKBPS();
 
-			  // Temperatura;
-			  EFF_Temp = 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)),3.00);
 
-			  //CPU 
-			  EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
+			  EFF_Temp = 1 - pow(((serverTemp.temperature - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+		 	  EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+		 	  EFF_Power = 1 - pow((((*ppServers)[sv.chassi][sv.server]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+		 	  EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
+			  EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
 
-			  // Recirculação de Calor-
-			  EFF_HRF =  1 - pow(( (HRF[sv.chassi] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			  // Consumo Energético
-			  EFF_Power = 1 - pow(((((*ppServers)[sv.chassi][sv.server]->GetPowerDraw() - (*ppServers)[sv.chassi][sv.server]->GetFanPower()) - PowerLow) / (PowerHight - PowerLow)),3);
-
-			  // Memoria
-			  EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-
-			  //NETWORK
-			  EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 3.00);
-			  
-			  serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
+			  serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
 
 			  serverScheduling.push_back(serverTemp);
 
@@ -1401,7 +1253,7 @@ void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
 		      full = 0;
 		   }
 		   else{
-			   //cout << "SimDC3D - Warning: No servers in the pool - Scheduling Algorithm - ThreeDimensionMultiObjAndPoolSchedulingAlgorithm!!!" << endl;
+			   // cout << "SimDC3D - Warning: No servers in the pool - Scheduling Algorithm - ThreeDimensionMultiObjAndPoolSchedulingAlgorithm!!!" << endl;
 			   break;
 		   }
 		}
@@ -1413,151 +1265,111 @@ void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
 
 }
 
-THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, const FLOATINGPOINT (*matrixD)[SIZE_OF_HR_MATRIX][SIZE_OF_HR_MATRIX], POOLServers* ppool, unsigned int* clockSimulation)
+THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
 {
 	ppServers = ps;
 	pqVMsToGo = pqvm;
-	pHeatRecirculationMatrixD = matrixD;
 	ppollServers = ppool;
 	totalScheduling = 0;
 	clock = clockSimulation;
-    HRFLow	= 100000.00;	
-    HRFHight = 0.00;
 
 	SCHEDULING_WITH_PREDICTION = true;
 
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		HRF[i] = 0.0;
-		for (int j=0; j<SIZE_OF_HR_MATRIX; ++j) {
-			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
-		}
-	}
-
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
-		if (HRF[i] < HRFLow) {
-		   HRFLow = HRF[i];
-		}
-		if (HRF[i] > HRFHight) {
-		   HRFHight = HRF[i];
-		}
-
-	}
 }
 
 void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
 {
- // Parametros
- int TLow = 0;
- int THight = 35;
- FLOATINGPOINT CPULow = 0.00;
- FLOATINGPOINT CPUHight = 1.00;
- FLOATINGPOINT PowerLow = 130;
- FLOATINGPOINT PowerHight = 305;
- FLOATINGPOINT MemoryLow = 0;
- FLOATINGPOINT MemoryHight = 128000000;
+
  FLOATINGPOINT EFF_Temp = 0.00;
  FLOATINGPOINT EFF_CPU = 0;
- FLOATINGPOINT EFF_HRF = 0;
  FLOATINGPOINT EFF_Power = 0;
  FLOATINGPOINT EFF_Memory = 0;
- FLOATINGPOINT EFF_NetWork = 0;
+ FLOATINGPOINT EFF_Traffic = 0;
 
  vector<SORTSERVER> serverScheduling;
- SORTSERVER serverTemp;
- queue<VirtualMachine*> VMsScheduler;
  vector<double> predictionTemp;
+ 
+ SORTSERVER serverTemp;
+ 
+ queue<VirtualMachine*> VMsScheduler;
 
  int RemovePOOL = 0; 
+ 
  unsigned int full = 0;
  
  POOL sv;
 
-  if (!pqVMsToGo->empty()) {
-	  for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-	     for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
-		     if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
-		        continue;
-		     }
-			 serverTemp.chassi = i;
-		     serverTemp.server = j;
-		     serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
-			 serverTemp.temperatureFuture = 0.0;
-		     serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
-			 serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
-			 serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
-			 serverTemp.predictedOverload = (*ppServers)[i][j]->ReturnCPUPrediction();
-			 serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
-			 serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
+ if (!pqVMsToGo->empty()) {
+	for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+	    for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+		    if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+		       continue;
+		    }
+			serverTemp.chassi = i;
+		    serverTemp.server = j;
+		    serverTemp.temperature = (*ppServers)[i][j]->CurrentInletTemperature();
+			serverTemp.temperatureFuture = 0.0;
+		    serverTemp.utilizationCPU = (*ppServers)[i][j]->VMRequiresThisMuchUtilization(); 
+			serverTemp.utilizationMemory = (*ppServers)[i][j]->VMRequiresThisMemory();   
+			serverTemp.memoryServer = (*ppServers)[i][j]->GetMemoryServer();
+			serverTemp.predictedOverload = (*ppServers)[i][j]->ReturnCPUPrediction();
+			serverTemp.speedKBPS = (*ppServers)[i][j]->ReturnBandWidthServerKBPS();
+			serverTemp.trafficKBPS = (*ppServers)[i][j]->ReturnServerTrafficKBPS();
 
-			 if ((*ppServers)[i][j]->ReturnSizeVectorTemperature() == SIZE_WINDOWN_PREDICTION) {
-				if (PREDICTION_ALGORITHM=="POLYNOM"){
-				   predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
-				} 
-				else{
-                   if (PREDICTION_ALGORITHM=="RBF"){
-					   predictionTemp = runRBF( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
-				   }
-				   else {
-					   predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction default
-				   }
-				}  
-			 	if (!predictionTemp.empty()) {
-		           if ( predictionTemp[CLENGTH-1] >= 10 && predictionTemp[CLENGTH-1] <= 34) {
-				      serverTemp.temperatureFuture = predictionTemp[CLENGTH-1];					 
-  			          (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[CLENGTH-1]);
-				      (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
-				      (*ppServers)[i][j]->AddHitPrediction();
-				   }
-			  	   else {
-                      if ( predictionTemp[0] >= 10 && predictionTemp[0] <= 34) {
-					     serverTemp.temperatureFuture = predictionTemp[0];
-						 (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[0]);
-				         (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
-				         (*ppServers)[i][j]->AddHitPrediction();
-				      }
-				      else {
-					     (*ppServers)[i][j]->AddErrorPrediction();
-					     serverTemp.temperatureFuture = serverTemp.temperature;
-				      }
+			if ((*ppServers)[i][j]->ReturnSizeVectorTemperature() == SIZE_WINDOWN_PREDICTION) {
+			   if (PREDICTION_ALGORITHM=="POLYNOM"){
+				  predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
+			   } 
+			   else{
+                  if (PREDICTION_ALGORITHM=="RBF"){
+					 predictionTemp = runRBF( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction
 				  }
-				}
-				predictionTemp.erase(predictionTemp.begin(), predictionTemp.end());
-			 }
-			 else {
-				serverTemp.temperatureFuture = serverTemp.temperature;
-			 }
+				  else {
+					 predictionTemp = runPolynom( (*ppServers)[i][j]->ReturnVectorTemperature() );  // run prediction default
+				  }
+			   }  
+			   if (!predictionTemp.empty()) {
+		          if ( predictionTemp[CLENGTH-1] >= 10 && predictionTemp[CLENGTH-1] <= 34) {
+				     serverTemp.temperatureFuture = predictionTemp[CLENGTH-1];					 
+  			         (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[CLENGTH-1]);
+				     (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
+				     (*ppServers)[i][j]->AddHitPrediction();
+				  }
+			  	  else {
+                     if ( predictionTemp[0] >= 10 && predictionTemp[0] <= 34) {
+					    serverTemp.temperatureFuture = predictionTemp[0];
+					    (*ppServers)[i][j]->InsertTemperaturePredictionServer(predictionTemp[0]);
+				        (*ppServers)[i][j]->InsertTimePredictionServer((*ppServers)[i][j]->ReturnClock()+(CLENGTH*MONITORINGTIME));
+				        (*ppServers)[i][j]->AddHitPrediction();
+				     }
+				     else {
+					    (*ppServers)[i][j]->AddErrorPrediction();
+					    serverTemp.temperatureFuture = serverTemp.temperature;
+				     }
+				  }
+			   }
+			   predictionTemp.erase(predictionTemp.begin(), predictionTemp.end());
+			}
+			else {
+			   serverTemp.temperatureFuture = serverTemp.temperature;
+			}
 
-			 // Temperatura;
-			 EFF_Temp = 1 - pow(((serverTemp.temperatureFuture - TLow) / (THight - TLow)),3.00);
+			EFF_Temp = 1 - pow(((serverTemp.temperatureFuture  - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+		 	EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+			EFF_Power = 1 - pow((((*ppServers)[i][j]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+			EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
+			EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
 
-			 EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
+			serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
 
-			 // Recirculação de Calor
-			 EFF_HRF =  1 - pow(( (HRF[i] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			 // Consumo Energético
-			 //EFF_Power = 1 - pow(((((*ppServers)[i][j]->GetPowerDraw() - (*ppServers)[i][j]->GetFanPower()) - PowerLow) / (PowerHight - PowerLow)),3);
-			 EFF_Power = 1 - (((*ppServers)[i][j]->GetPowerDraw() - PowerLow) / (PowerHight - PowerLow));
-			 // Memoria
-			 EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-
-			 //NETWORK
-			 EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 2.00);
-
-			 // serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
-			 serverTemp.ranking = EFF_Power + EFF_Temp + EFF_NetWork;
-
-			  //CPU 
-			 if (serverTemp.predictedOverload)  {
-				serverTemp.ranking = 0;
-			 }
-
-			 serverScheduling.push_back(serverTemp);
-	     }
-     }
-
+			//CPU 
+			if (serverTemp.predictedOverload)  {
+			   serverTemp.ranking = 0;
+			}
+  		    serverScheduling.push_back(serverTemp);
+	    }
+    }
     sort(serverScheduling.begin(), serverScheduling.end(), Sort_Ranking);
-   
   } 
 
   // assign VMs to Servers
@@ -1602,26 +1414,13 @@ void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::Assign
 			  serverTemp.speedKBPS = (*ppServers)[sv.chassi][sv.server]->ReturnBandWidthServerKBPS();
 			  serverTemp.trafficKBPS = (*ppServers)[sv.chassi][sv.server]->ReturnServerTrafficKBPS();
 
-			  // Temperatura;
-			  EFF_Temp = 1 - pow(((serverTemp.temperature - TLow) / (THight - TLow)),3.00);
+			  EFF_Temp = 1 - pow(((serverTemp.temperature  - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
+		 	  EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
+			  EFF_Power = 1 - pow((((*ppServers)[sv.chassi][sv.server]->GetPowerDraw() - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
+		 	  EFF_Memory = pow(( FLOATINGPOINT ((serverTemp.memoryServer - serverTemp.utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
+			  EFF_Traffic = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS  - 0))), E_TRAFFIC); 
 
-			  //CPU 
-			  EFF_CPU = 1 - pow(((serverTemp.utilizationCPU - CPULow) / (CPUHight - CPULow)), 3); 
-
-			  // Recirculação de Calor
-			  EFF_HRF =  1 - pow(( (HRF[sv.chassi] - HRFLow) / (HRFHight - HRFLow)), 3);
-
-			  // Consumo Energético
-			  EFF_Power = 1 - (((*ppServers)[sv.chassi][sv.server]->GetPowerDraw() - PowerLow) / (PowerHight - PowerLow));
-
-			  // Memoria
-			  EFF_Memory = pow( (((serverTemp.memoryServer - serverTemp.utilizationMemory) - MemoryLow) / ( MemoryHight - MemoryLow )), 3);  
-
-			  //NETWORK
-			  EFF_NetWork = 1 - pow(((serverTemp.trafficKBPS - 0) / (FLOATINGPOINT (serverTemp.speedKBPS - 0))), 2.00);
-
-			  //serverTemp.ranking = EFF_Temp + EFF_CPU + EFF_HRF +  EFF_Power + EFF_Memory + EFF_NetWork;
-			  serverTemp.ranking = EFF_Power + EFF_Temp + EFF_NetWork;
+			  serverTemp.ranking = (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
 
 			  serverScheduling.push_back(serverTemp);
 
@@ -1642,6 +1441,4 @@ void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::Assign
   if (RemovePOOL > 0) {
 	  ppollServers->AddPowerOn(RemovePOOL);
   }
-
-
 }

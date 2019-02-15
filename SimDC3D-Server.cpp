@@ -268,6 +268,7 @@ FLOATINGPOINT Server::VMRequiresThisMuchUtilization()
 	for (vector<VirtualMachine *>::iterator it = vRunningVMs.begin(); it != vRunningVMs.end(); ++it) {
   		sum += (*it)->HowMuchCPULoadWillThisVMRequire(); // retorna cpuLoadRatio
 	}
+
 	return sum/NUMBER_OF_CORES_IN_ONE_SERVER; // this can be more than (1.0)
 }
 
@@ -299,8 +300,9 @@ long int Server::VMRequiresThisMemory()
 	}
 
 	long int sum = 0;
-	for (vector<VirtualMachine *>::iterator it = vRunningVMs.begin(); it != vRunningVMs.end(); ++it)
+	for (vector<VirtualMachine *>::iterator it = vRunningVMs.begin(); it != vRunningVMs.end(); ++it) {
 		sum += (*it)->GetMemUseVM();
+	}
 	return sum; 
 }
 
@@ -1444,14 +1446,6 @@ FLOATINGPOINT Server::AverageServerTrafficKBPS(void)
 
 FLOATINGPOINT Server::CalculationRanking(FLOATINGPOINT futureTemperatureServer, FLOATINGPOINT powerSRV, FLOATINGPOINT DataCenterLoad) 
 {
-	FLOATINGPOINT TLow = 10.0;
-	FLOATINGPOINT THight = 34.00;
-	FLOATINGPOINT CPULow = 0.00;
-	FLOATINGPOINT CPUHight = 1.00;
-	FLOATINGPOINT PowerLow = 130;
-	FLOATINGPOINT PowerHight = 305;
-	FLOATINGPOINT MemoryLow = 0;
-	FLOATINGPOINT MemoryHight = TOTAL_OF_MEMORY_IN_ONE_SERVER;
 
 	FLOATINGPOINT EFF_Temp = 0.00;
 	FLOATINGPOINT EFF_CPU = 0;
@@ -1476,20 +1470,17 @@ FLOATINGPOINT Server::CalculationRanking(FLOATINGPOINT futureTemperatureServer, 
 	
 	powerS = powerSRV;
 
-	EFF_Temp = 1 - pow(((temperature - TLow) / (THight - TLow)), E_TEMPERATURE);
+	EFF_Temp = 1 - pow(((temperature - TEMPLOW) / (TEMPHIGHT - TEMPLOW)), E_TEMPERATURE);
 
-	EFF_CPU = 1 - pow(((utilizationCPU  - CPULow) / (CPUHight - CPULow)), E_CPU);
+	EFF_CPU = 1 - pow(((utilizationCPU  - CPULOW) / (CPUHIGHT - CPULOW)), E_CPU);
 
-	EFF_Power = 1 - pow(((powerS - PowerLow) / (PowerHight - PowerLow)), E_POWER);
+	EFF_Power = 1 - pow(( (powerS - POWERLOW) / (POWERHIGHT - POWERLOW)), E_POWER);
 	//EFF_Power = 1 - pow((((powerS - GetFanPower()) - PowerLow) / (PowerHight - PowerLow)), E_POWER);
 
-	EFF_Memory = pow((((memoryServer - utilizationMemory) - MemoryLow) / (MemoryHight - MemoryLow)), E_MEMORY);
+	EFF_Memory = pow(( FLOATINGPOINT ((memoryServer  - utilizationMemory) - 0) / FLOATINGPOINT (TOTAL_OF_MEMORY_IN_ONE_SERVER - 0)), E_MEMORY);
 
-	EFF_Traffic = 1 - pow(((trafficKBPS - 0) / (FLOATINGPOINT (speedKBPS  - 0))), E_TRAFFIC); 
+	EFF_Traffic = 1 - pow(((trafficKBPS - 0) / (FLOATINGPOINT (speedKBPS  - 0))), E_TRAFFIC);
 
 	return (WEIGHT_TEMPERATURE*(ALPHA_3DMOBFD * EFF_Temp)) + (WEIGHT_CPU*(BETA_3DMOBFD * EFF_CPU)) + (WEIGHT_POWER*(GAMMA_3DMOBFD * EFF_Power)) + (WEIGHT_MEMORY*(DELTA_3DMOBFD * EFF_Memory)) + (WEIGHT_TRAFFIC*(EPSILON_3DMOBFD * EFF_Traffic));
-
-	
-
 }
 

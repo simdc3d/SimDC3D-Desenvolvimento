@@ -386,8 +386,7 @@ void NetworkLinkOverload::ServerOptimization(int clockSimulation, vector<STRUCMI
 	   removePOOL=true;
 	   if (ServerActive->size() > 0) {
           for (int l=0; l < static_cast<int> (ServerActive->size()); l++) {
-			  if ((((*ServerActive)[l].utilizationCPU + ((*listVMs)[k].VM->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].temperature > EMERGENCY_TEMPERATURE-0.30) || ((*ServerActive)[l].trafficKBPS >= (0.80 * (*ServerActive)[l].speedKBPS)) || ((*ServerActive)[l].isMigrate)) {
-//			  if ((((*ServerActive)[l].averageUtilizationCPU + ((*listVMs)[k].VM->AverageCPU()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].temperature > (EMERGENCY_TEMPERATURE-0.70)) || (((*ServerActive)[l].averageTrafficKBPS + (*listVMs)[k].VM->ReturnAverageTrafficVM()) >= (0.80 * (*ServerActive)[l].speedKBPS)) || ((*ServerActive)[l].isMigrate)) {
+			  if ( (((*ServerActive)[l].utilizationCPU + ((*listVMs)[k].VM->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].temperature > EMERGENCY_TEMPERATURE-0.30) || ((*ServerActive)[l].trafficKBPS >= (0.80 * (*ServerActive)[l].speedKBPS)) || ((*ServerActive)[l].isMigrate) ) {
 			     continue;
 			  }
 			  selected = l; 
@@ -605,27 +604,28 @@ void THREEDMOBFD_OverLoaded::ServerOptimization(int clockSimulation, vector<STRU
 	   sort(ServerActive->begin(), ServerActive->end(), sortDecreasingRanking);
 
 	   // Calcula o consumo de todos os chassis
-	   for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+	   for (int i=0; i < NUMBER_OF_CHASSIS; ++i) {
 	       power[i] = 0.0;
-	       for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+	       for (int j=0; j < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
 		       power[i] += (*ppoServers)[i][j]->GetPowerDraw();
 	       }
        }
 
 	   if (ServerActive->size() > 0) {
           for (int l=0; l < static_cast<int> (ServerActive->size()); l++) {
- 		 	  if ((((*ServerActive)[l].utilizationCPU + ((*listVMs)[k].VM->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].isMigrate)) {
+ 		 	  if ( (((*ServerActive)[l].utilizationCPU + ((*listVMs)[k].VM->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) >= THRESHOLD_TOP_OF_USE_CPU) || ( ((*ServerActive)[l].utilizationMemory + (*listVMs)[k].VM->GetMemUseVM()) >= (*ServerActive)[l].memoryServer ) || ((*ServerActive)[l].isMigrate)) {
 			     continue;
 			  }
 
 			  if ((*listVMs)[k].chassi != (*ServerActive)[l].chassi) {
 			     power[(*ServerActive)[l].chassi] = power[(*ServerActive)[l].chassi] - (*ppoServers)[(*ServerActive)[l].chassi][(*ServerActive)[l].server]->GetPowerDraw() + (*ppoServers)[(*ServerActive)[l].chassi][(*ServerActive)[l].server]->EstimatePowerDrawWithTemperature((*ServerActive)[l].utilizationCPU, ((*listVMs)[k].VM->AverageCPU()/NUMBER_OF_CORES_IN_ONE_SERVER),(*ServerActive)[l].temperature);  
 			  }
+
 			  memset((void *)estimateTemperatureServer, 0.00, CHASSIS*SERVERS*sizeof(FLOATINGPOINT)); 
 
 			  // calcula o calor de gerado por cada chassi
-		      for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
-		          for (int j=0; j<NUMBER_OF_CHASSIS; ++j) {
+		      for (int i=0; i < NUMBER_OF_CHASSIS; ++i) {
+		          for (int j=0; j < NUMBER_OF_CHASSIS; ++j) {
   			          FLOATINGPOINT hFromJtoI  = power[j]*HeatRecirculation[i][j];
 				      for (int p=0; p < NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++p) {
 				          estimateTemperatureServer[i][p] += hFromJtoI;

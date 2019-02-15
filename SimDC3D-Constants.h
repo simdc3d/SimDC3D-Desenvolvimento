@@ -25,6 +25,6 @@ extern int NUMBER_OF_CHASSIS;
 #define POWERHIGHT 305
 #define CPULOW 0.00
 #define CPUHIGHT 1.00
-#define TEMPLOW 0
+#define TEMPLOW 10
 #define TEMPHIGHT 34
 
