@@ -88,7 +88,7 @@ void TopologySimDC3D::CreateTopology(Server* (*tservers)[SIZE_OF_HR_MATRIX][NUMB
  }
 
  // Import topology from file (FNSS)
- cout << "SIMDC3D-NOTICE: Initializing topology import !!!" << NAME_FILE_TOPOLOGY << endl << endl;
+ cout << "SIMDC3D-NOTICE: Initializing topology import !!! " << NAME_FILE_TOPOLOGY << endl;
 	topology = fnss::Parser::parseTopology(NAME_FILE_TOPOLOGY);
  cout << endl;
  cout << "SIMDC3D-NOTICE: Topology imported and created !!!" << endl << endl;

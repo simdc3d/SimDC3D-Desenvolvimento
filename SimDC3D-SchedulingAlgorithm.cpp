@@ -19,6 +19,8 @@ RandomSchedulingAlgorithm::RandomSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MA
 	srand((unsigned int)time(NULL));
 	totalScheduling = 0;
 	SCHEDULING_WITH_PREDICTION = false;
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is Random !!!" << endl;
 }
 
 void RandomSchedulingAlgorithm::AssignVMs()
@@ -48,6 +50,7 @@ LowTemperatureFirstSchedulingAlgorithm::LowTemperatureFirstSchedulingAlgorithm(S
 	srand((unsigned int)time(NULL));
 	totalScheduling = 0;
 	SCHEDULING_WITH_PREDICTION = false;
+	cout << "SimDC3D-NOTICE: The data center scheduler is Low Temperature First !!!" << endl;
 }
 
 void LowTemperatureFirstSchedulingAlgorithm::AssignVMs()
@@ -118,6 +121,8 @@ UniformTaskSchedulingAlgorithm::UniformTaskSchedulingAlgorithm(Server* (*ps)[SIZ
 	clock = clockSimulation;
 
 	SCHEDULING_WITH_PREDICTION = false;
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is Uniform Task !!!" << endl;
 }
 
 void UniformTaskSchedulingAlgorithm::AssignVMs()
@@ -158,6 +163,7 @@ BestPerformanceSchedulingAlgorithm::BestPerformanceSchedulingAlgorithm(Server* (
 	totalScheduling = 0;
 	clock = clockSimulation;
 	SCHEDULING_WITH_PREDICTION = false;
+	cout << "SimDC3D-NOTICE: The data center scheduler is Best Performance !!!" << endl;
 }
 
 void BestPerformanceSchedulingAlgorithm::AssignVMs()
@@ -225,6 +231,8 @@ MinHRSchedulingAlgorithm::MinHRSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATR
 	}
 	
 	srand((unsigned int)time(NULL));
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is minimum recirculation !!!" << endl;
 }
 
 void MinHRSchedulingAlgorithm::AssignVMs()
@@ -282,6 +290,7 @@ XintSchedulingAlgorithm::XintSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX
 	totalScheduling = 0;
 	clock = clockSimulation;
 	SCHEDULING_WITH_PREDICTION = false;
+	cout << "SimDC3D-NOTICE: The data center scheduler is Xint !!!" << endl;
 }
 
 void XintSchedulingAlgorithm::AssignVMs()
@@ -365,8 +374,12 @@ CenterRackFirstSchedulingAlgorithm::CenterRackFirstSchedulingAlgorithm(Server* (
 	46,47,48,49,50,
 */
 
-	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i)
+	for (int i=0; i<SIZE_OF_HR_MATRIX; ++i) {
 		HRFSortedIndex[i] = machineNumber[i] -1;
+	}
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is Center Rack !!!" << endl;
+
 }
 
 void CenterRackFirstSchedulingAlgorithm::AssignVMs()
@@ -429,6 +442,8 @@ TwoDimensionWithPoolSchedulingAlgorithm::TwoDimensionWithPoolSchedulingAlgorithm
 			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
 		}
 	}
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is Two Dimension with Pool Server !!!" << endl;
 }
 
      
@@ -543,6 +558,8 @@ TwoDimensionWithPoolAndPredictionSchedulingAlgorithm::TwoDimensionWithPoolAndPre
 			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
 		}
 	}
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is Two Dimension with Pool Server and Prediction !!!" << endl;
 }
 void TwoDimensionWithPoolAndPredictionSchedulingAlgorithm::AssignVMs()
 {
@@ -698,6 +715,7 @@ TwoDimensionWithPredictionSchedulingAlgorithm::TwoDimensionWithPredictionSchedul
 			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
 		}
 	}
+	cout << "SimDC3D-NOTICE: The data center scheduler is Two Dimension with Prediction !!!" << endl;
 }
 void TwoDimensionWithPredictionSchedulingAlgorithm::AssignVMs()
 {
@@ -826,6 +844,7 @@ TwoDimensionSchedulingAlgorithm::TwoDimensionSchedulingAlgorithm(Server* (*ps)[S
 			HRF[i] += (*pHeatRecirculationMatrixD)[j][i];
 		}
 	}
+	cout << "SimDC3D-NOTICE: The data center scheduler is Two Dimension !!!" << endl;
 }
      
 void TwoDimensionSchedulingAlgorithm::AssignVMs()
@@ -901,6 +920,7 @@ THREEDMOBFDSchedulingAlgorithm::THREEDMOBFDSchedulingAlgorithm(Server* (*ps)[SIZ
 
 	SCHEDULING_WITH_PREDICTION = false;
 
+	cout << "SimDC3D-NOTICE: The data center scheduler is 3DMOBFD !!!" << endl;
 }
 
 void THREEDMOBFDSchedulingAlgorithm::AssignVMs()
@@ -997,6 +1017,8 @@ THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFDAndPred
 	clock = clockSimulation;
 
 	SCHEDULING_WITH_PREDICTION = true;
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is 3DMOBFD with Prediction !!!" << endl;
 }
 
 void THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
@@ -1141,6 +1163,7 @@ THREEDMOBFDAndPoolSchedulingAlgorithm::THREEDMOBFDAndPoolSchedulingAlgorithm(Ser
 
 	SCHEDULING_WITH_PREDICTION = false;
 
+	cout << "SimDC3D-NOTICE: The data center scheduler is 3DMOBFD with Pool Server !!!" << endl;
 }
 
 void THREEDMOBFDAndPoolSchedulingAlgorithm::AssignVMs()
@@ -1274,7 +1297,7 @@ THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::THREEDMOBFD
 	clock = clockSimulation;
 
 	SCHEDULING_WITH_PREDICTION = true;
-
+	cout << "SimDC3D-NOTICE: The data center scheduler is 3DMOBFD with Pool Server and Prediction !!!" << endl;
 }
 
 void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::AssignVMs()
@@ -1442,3 +1465,140 @@ void THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm::Assign
 	  ppollServers->AddPowerOn(RemovePOOL);
   }
 }
+
+
+FFDAndPoolSchedulingAlgorithm::FFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
+{
+	ppServers = ps;
+	pqVMsToGo = pqvm;
+	ppollServers = ppool;
+	totalScheduling = 0;
+	clock = clockSimulation;
+
+	SCHEDULING_WITH_PREDICTION = false;
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is FFD with Pool Server !!!" << endl;
+}
+
+void FFDAndPoolSchedulingAlgorithm::AssignVMs()
+{
+ 
+ POOL sv;
+ int RemovePOOL = 0; 
+ bool removePool = false; 
+
+ 
+ // assign VMs to Servers
+ while (!pqVMsToGo->empty()) {
+	   // assign with qWaitingVMs.top()
+	   removePool = true;
+	   for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+		   for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+			   if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+				  continue;
+			   }
+			   if ( ((((*ppServers)[i][j]->VMRequiresThisMuchUtilization()) + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && (((*ppServers)[i][j]->VMRequiresThisMemory() + pqVMsToGo->front()->GetMemUseVM()) < (*ppServers)[i][j]->GetMemoryServer()) )  {
+				  pqVMsToGo->front()->SetClock(*clock);
+			      (*ppServers)[i][j]->AssignOneVM(pqVMsToGo->front());
+			      totalScheduling += 1;
+			      pqVMsToGo->pop();
+			      removePool = false;
+				  break;
+		       }
+	       }
+		   if ( !removePool ) {
+			  break;
+		   }
+       }
+	   if (removePool) {
+		   sv = ppollServers->RemoveServerPOOL(ppServers);
+		   if (sv.chassi != -1) {
+			  pqVMsToGo->front()->SetClock(*clock);
+			  (*ppServers)[sv.chassi][sv.server]->AssignOneVM(pqVMsToGo->front());
+			  totalScheduling += 1;
+		      pqVMsToGo->pop();
+		      RemovePOOL++;
+		   }
+		   else {
+			  break;
+		   }
+	   }
+ }
+ if (RemovePOOL > 0) {
+	ppollServers->AddPowerOn(RemovePOOL);
+ }
+} 
+
+
+PABFDAndPoolSchedulingAlgorithm::PABFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation)
+{
+	ppServers = ps;
+	pqVMsToGo = pqvm;
+	ppollServers = ppool;
+	totalScheduling = 0;
+	clock = clockSimulation;
+
+	SCHEDULING_WITH_PREDICTION = false;
+
+	cout << "SimDC3D-NOTICE: The data center scheduler is FFD with Pool Server !!!" << endl;
+}
+
+void PABFDAndPoolSchedulingAlgorithm::AssignVMs()
+{
+ 
+ POOL sv;
+ int RemovePOOL = 0; 
+ bool removePool = false; 
+ 
+ double powerServer = 0.00;
+ double minPowerServer = 9999999.00;
+ 
+ int selectChassi = 0;
+ int selectServer = 0;
+
+ // assign VMs to Servers
+ while (!pqVMsToGo->empty()) {
+	   // assign with qWaitingVMs.top()
+	   removePool = true;
+	   minPowerServer = 9999999;
+	   for (int i=0; i<NUMBER_OF_CHASSIS; ++i) {
+		   for (int j=0; j<NUMBER_OF_SERVERS_IN_ONE_CHASSIS; ++j) {
+			   if ( ((*ppServers)[i][j]->IsOFF()) || ((*ppServers)[i][j]->IsHibernating()) || ((*ppServers)[i][j]->IsENDING()) || ((*ppServers)[i][j]->IsPOOL()) || ((*ppServers)[i][j]->IsMIGRATING()) || ((*ppServers)[i][j]->IsINITIALIZING())) { 	
+				  continue;
+			   }
+			   if ( ((((*ppServers)[i][j]->VMRequiresThisMuchUtilization()) + (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER)) < THRESHOLD_TOP_OF_USE_CPU) && (((*ppServers)[i][j]->VMRequiresThisMemory() + pqVMsToGo->front()->GetMemUseVM()) < (*ppServers)[i][j]->GetMemoryServer()) )  {
+			      powerServer = (*ppServers)[i][j]->EstimatePowerDraw((*ppServers)[i][j]->VMRequiresThisMuchUtilization(), (pqVMsToGo->front()->GetCPULoadRatio()/NUMBER_OF_CORES_IN_ONE_SERVER));
+			      if (powerServer < minPowerServer) {
+				     selectChassi = i;
+				     selectServer = j;
+				     minPowerServer = powerServer;   
+                     removePool = false;
+			      }
+			   }
+	       }
+       }
+
+	   if ( !removePool ) {
+ 		  pqVMsToGo->front()->SetClock(*clock);
+		  (*ppServers)[selectChassi][selectServer]->AssignOneVM(pqVMsToGo->front());
+		  totalScheduling += 1;
+		  pqVMsToGo->pop();
+       }
+	   else {
+		  sv = ppollServers->RemoveServerPOOL(ppServers);
+		  if (sv.chassi != -1) {
+			 pqVMsToGo->front()->SetClock(*clock);
+			 (*ppServers)[sv.chassi][sv.server]->AssignOneVM(pqVMsToGo->front());
+			 totalScheduling += 1;
+		     pqVMsToGo->pop();
+		     RemovePOOL++;
+		  }
+		  else {
+			  break;
+		  }
+	   }
+ }
+ if (RemovePOOL > 0) {
+	ppollServers->AddPowerOn(RemovePOOL);
+ }
+}  

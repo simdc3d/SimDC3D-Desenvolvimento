@@ -115,15 +115,18 @@ DataCenter::DataCenter(JobQueue* q, POOLServers* Pool, TopologySimDC3D* topology
 		pSchedulingAlgorithm = new TwoDimensionWithPredictionSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
 	else if (SCHEDULING_ALGORITHM == "2D")
 		pSchedulingAlgorithm = new TwoDimensionSchedulingAlgorithm(&pServers, &qWaitingVMs, &HeatRecirculationMatrixD, pPool, &clock);
-	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ")
+	else if (SCHEDULING_ALGORITHM == "3DMOBFD")
 		pSchedulingAlgorithm = new THREEDMOBFDSchedulingAlgorithm(&pServers, &qWaitingVMs, pPool, &clock);
-	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_POOL")
+	else if (SCHEDULING_ALGORITHM == "3DMOBFD_POOL")
 		pSchedulingAlgorithm = new THREEDMOBFDAndPoolSchedulingAlgorithm(&pServers, &qWaitingVMs, pPool, &clock);
-	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_PREDICTION")
+	else if (SCHEDULING_ALGORITHM == "3DMOBFD_PREDICTION")
 		pSchedulingAlgorithm = new THREEDMOBFDAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs,pPool, &clock);
-	else if (SCHEDULING_ALGORITHM == "3D_MULTI_OBJ_POOL_AND_PREDICTION")
+	else if (SCHEDULING_ALGORITHM == "3DMOBFD_POOL_AND_PREDICTION")
 		pSchedulingAlgorithm = new THREEDMOBFDAndPoolAndPredictionCPUAndTemperatureSchedulingAlgorithm(&pServers, &qWaitingVMs, pPool, &clock);
-
+	else if (SCHEDULING_ALGORITHM == "FFD_POOL")
+		pSchedulingAlgorithm = new FFDAndPoolSchedulingAlgorithm(&pServers, &qWaitingVMs, pPool, &clock);
+	else if (SCHEDULING_ALGORITHM == "PABFD_POOL")
+		pSchedulingAlgorithm = new PABFDAndPoolSchedulingAlgorithm(&pServers, &qWaitingVMs, pPool, &clock); 
 	else {
 		cout << "SIMDC3D-ERROR: Unknown scheduling algorithm !!!" << endl;
 		exit(0);

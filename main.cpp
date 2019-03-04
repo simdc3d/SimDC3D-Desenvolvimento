@@ -1881,7 +1881,7 @@ bool ParsingArguments(int argc, char* argv[])
 	cout << "#Setting 3DMOBFD Algorithm Parameters " << endl;
 		cout << " -ALPHA_3DMOBFD  : " << ALPHA_3DMOBFD  << endl;
 		cout << " -BETA_3DMOBFD : " << BETA_3DMOBFD << endl;
-		cout << " -GAMMA_3DMOBFD : " << SIZE_WINDOWN_PREDICTION_CPU  << endl; 
+		cout << " -GAMMA_3DMOBFD : " << GAMMA_3DMOBFD  << endl; 
 		cout << " -DELTA_3DMOBFD : " << DELTA_3DMOBFD << endl;
 		cout << " -EPSILON_3DMOBFD : " << EPSILON_3DMOBFD  << endl;
 		cout << endl;

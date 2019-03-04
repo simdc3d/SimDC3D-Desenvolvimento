@@ -218,3 +218,22 @@ public:
 	int returnTotalScheduling(void) { return totalScheduling; }
 private:
 };
+
+
+class FFDAndPoolSchedulingAlgorithm : public SchedulingAlgorithm
+{
+public:
+	FFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
+	void AssignVMs();
+	int returnTotalScheduling(void) { return totalScheduling; }
+private:
+};
+
+class PABFDAndPoolSchedulingAlgorithm : public SchedulingAlgorithm
+{
+public:
+	PABFDAndPoolSchedulingAlgorithm(Server* (*ps)[SIZE_OF_HR_MATRIX][NUMBER_OF_SERVERS_IN_ONE_HR_MATRIX_CELL_MAX], queue<VirtualMachine*>* pqvm, POOLServers* ppool, unsigned int* clockSimulation);
+	void AssignVMs();
+	int returnTotalScheduling(void) { return totalScheduling; }
+private:
+};
